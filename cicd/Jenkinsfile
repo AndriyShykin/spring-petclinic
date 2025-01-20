@@ -109,17 +109,17 @@ pipeline {
             PATH = "/busybox:/kaniko:$PATH"
           }
           steps {
-            withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_TOKEN_RW')]) {
+            withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
               container(name: 'kaniko', shell: '/busybox/sh') {
                 unstash 'package'
                 sh '''#!/busybox/sh
-                      echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_TOKEN_RW" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
+                      echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
                    '''
                 sh '''#!/busybox/sh
                       cp target/*.jar cicd/app.jar
                    '''
                 sh '''#!/busybox/sh
-                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
+                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
                    '''
                 archiveArtifacts artifacts: 'image.txt', fingerprint: true
               }
