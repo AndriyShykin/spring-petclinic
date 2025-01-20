@@ -79,6 +79,12 @@ pipeline {
       }
     }
     stage('Kaniko') {
+      when {
+        anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+        }
+      }
       agent {
         kubernetes {
           yaml """
@@ -126,6 +132,12 @@ pipeline {
       }
     }
     stage('Deploy') {
+      when {
+        anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+        }
+      }
       agent { label 'docker' }
       when {
         expression {
@@ -133,6 +145,7 @@ pipeline {
         }
       }
       steps {
+        sh 'echo "Using BRANCH_NAME: ${BRANCH_NAME}"'
         sh 'docker compose down'
         sh 'docker compose up --detach'
       }
