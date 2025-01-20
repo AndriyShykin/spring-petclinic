@@ -1,0 +1,148 @@
+pipeline {
+  agent none
+  environment {
+    EMAIL_RECIPIENT = 'shykin@ukr.net'
+    IMAGE_REGISTRY = 'https://index.docker.io/v1/'
+    REPOSITORY = 'spring-petclinic'
+    SONAR_HOST_URL = 'https://sonarqube.lan:9000/'
+  }
+  stages {
+    stage('Maven') {
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - cat
+                  image: maven:3.9.9-eclipse-temurin-23-alpine
+                  name: maven
+                  tty: true
+                  volumeMounts:
+                  - mountPath: /root/.m2
+                    name: maven-cache
+                  - mountPath: /root/truststore.p12
+                    name: truststore
+                    readOnly: true
+                    subPath: truststore.p12
+                volumes:
+                - name: maven-cache
+                  persistentVolumeClaim:
+                    claimName: maven-cache
+                - name: truststore
+                  secret:
+                    secretName: sonar-truststore        
+              """
+        }
+      }
+      stages {
+        stage('Test') {
+          steps {
+            container('maven') {
+              sh 'mvn clean test'
+            }
+          }
+          post {
+            always {
+              container('maven') {
+                junit '**/target/surefire-reports/*.xml'
+              }
+            }
+          }
+        }
+        stage('Package') {
+          steps {
+            container('maven') {
+              sh 'mvn package -DskipTests'
+              stash includes: '**/target/*.jar', name: 'package'
+              archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+            }
+          }
+        }
+        stage('Sonar') {
+          steps {
+            withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+              container('maven') {
+                sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Kaniko') {
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - /busybox/sleep
+                  - infinity
+                  image: gcr.io/kaniko-project/executor:debug
+                  name: kaniko
+                  tty: true
+              """
+        }
+      }
+      stages {
+        stage('Build Image') {
+          when {
+            expression {
+              env.BRANCH_NAME in ['main', 'test', 'develop']
+            }
+          }
+          environment {
+            PATH = "/busybox:/kaniko:$PATH"
+          }
+          steps {
+            withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_TOKEN_RW')]) {
+              container(name: 'kaniko', shell: '/busybox/sh') {
+                unstash 'package'
+                sh '''#!/busybox/sh
+                      echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_TOKEN_RW" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
+                   '''
+                sh '''#!/busybox/sh
+                      cp target/*.jar cicd/app.jar
+                   '''
+                sh '''#!/busybox/sh
+                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
+                   '''
+                archiveArtifacts artifacts: 'image.txt', fingerprint: true
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy') {
+      agent { label 'docker' }
+      when {
+        expression {
+          env.BRANCH_NAME in ['main', 'test', 'develop']
+        }
+      }
+      steps {
+        sh 'docker compose down'
+        sh 'docker compose up --detach'
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        if (env.BRANCH_NAME in ['main', 'test', 'develop']) {
+          if (currentBuild.currentResult == 'FAILURE' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
+            mail to: "${env.EMAIL_RECIPIENT}",
+                subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+                body: """Console output: ${env.BUILD_URL}"""
+          }
+        }
+      }
+    }
+  }
+}
