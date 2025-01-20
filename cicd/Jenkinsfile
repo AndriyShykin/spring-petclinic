@@ -80,9 +80,14 @@ pipeline {
     }
     stage('Kaniko') {
       when {
-        anyOf {
+        allOf {
+          anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
         }
       }
       agent {
@@ -103,11 +108,6 @@ pipeline {
       }
       stages {
         stage('build image') {
-          when {
-            expression {
-              env.BRANCH_NAME in ['main', 'test', 'develop']
-            }
-          }
           environment {
             PATH = "/busybox:/kaniko:$PATH"
           }
@@ -133,17 +133,17 @@ pipeline {
     }
     stage('Deploy') {
       when {
-        anyOf {
+        allOf {
+          anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
         }
       }
       agent { label 'docker' }
-      when {
-        expression {
-          env.BRANCH_NAME in ['main', 'test', 'develop']
-        }
-      }
       steps {
         sh 'echo "Using BRANCH_NAME: ${BRANCH_NAME}"'
         sh 'docker compose down'
