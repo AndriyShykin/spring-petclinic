@@ -1,10 +1,7 @@
 pipeline {
   agent none
   environment {
-    EMAIL_RECIPIENT = 'shykin@ukr.net'
-    IMAGE_REGISTRY = 'https://index.docker.io/v1/'
-    REPOSITORY = 'spring-petclinic'
-    SONAR_HOST_URL = 'https://sonarqube.lan:9000/'
+    PROJECT = 'spring-petclinic'
   }
   stages {
     stage('Maven') {
@@ -122,7 +119,7 @@ pipeline {
                       cp target/*.jar cicd/app.jar
                    '''
                 sh '''#!/busybox/sh
-                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
+                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$REPOSITORY\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
                    '''
                 archiveArtifacts artifacts: 'image.txt', fingerprint: true
               }
