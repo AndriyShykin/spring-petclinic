@@ -8,6 +8,12 @@ pipeline {
   }
   stages {
     stage('Maven') {
+      when {
+        anyOf {
+            changeset "src/**"
+            triggeredBy 'UserIdCause'
+        }
+      }
       agent {
         kubernetes {
           yaml """
@@ -38,7 +44,7 @@ pipeline {
         }
       }
       stages {
-        stage('Test') {
+        stage('test') {
           steps {
             container('maven') {
               sh 'mvn clean test'
@@ -52,7 +58,7 @@ pipeline {
             }
           }
         }
-        stage('Package') {
+        stage('package') {
           steps {
             container('maven') {
               sh 'mvn package -DskipTests'
@@ -61,7 +67,7 @@ pipeline {
             }
           }
         }
-        stage('Sonar') {
+        stage('sonar') {
           steps {
             withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
               container('maven') {
@@ -90,7 +96,7 @@ pipeline {
         }
       }
       stages {
-        stage('Build Image') {
+        stage('build image') {
           when {
             expression {
               env.BRANCH_NAME in ['main', 'test', 'develop']
