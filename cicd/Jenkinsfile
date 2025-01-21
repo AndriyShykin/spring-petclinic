@@ -150,8 +150,8 @@ pipeline {
             break
           default:
             currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
-            sh 'docker compose down'
-            sh 'docker compose up --detach'
+            sh 'docker compose -f cicd/compose.yaml down'
+            sh 'docker compose -f cicd/compose.yaml up --detach'
         }
       }
     }
