@@ -24,16 +24,11 @@ pipeline {
                   name: maven
                   tty: true
                   volumeMounts:
-                  - mountPath: /root/.m2
-                    name: maven-cache
                   - mountPath: /root/truststore.p12
                     name: truststore
                     readOnly: true
                     subPath: truststore.p12
                 volumes:
-                - name: maven-cache
-                  persistentVolumeClaim:
-                    claimName: maven-cache
                 - name: truststore
                   secret:
                     secretName: sonar-truststore        
