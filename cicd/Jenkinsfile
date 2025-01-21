@@ -153,10 +153,10 @@ pipeline {
               default:
                 currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
             }
-            sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username "$IMAGE_REGISTRY_USER" --password-stdin'
-            sh 'docker compose -f cicd/compose.yaml down'
-            sh 'docker compose -f cicd/compose.yaml up --detach'
-            sh 'docker logout'
+            printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username "$IMAGE_REGISTRY_USER" --password-stdin
+            docker compose -f cicd/compose.yaml down
+            docker compose -f cicd/compose.yaml up --detach
+            docker logout
           }
         }
       }
