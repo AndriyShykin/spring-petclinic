@@ -39,7 +39,7 @@ pipeline {
         stage('test') {
           steps {
             container('maven') {
-              sh 'mvn clean test'
+              sh 'mvn -B clean test'
             }
           }
           post {
@@ -53,7 +53,7 @@ pipeline {
         stage('package') {
           steps {
             container('maven') {
-              sh 'mvn package -DskipTests'
+              sh 'mvn -B package -DskipTests'
               stash includes: '**/target/*.jar', name: 'package'
               archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
             }
@@ -63,7 +63,7 @@ pipeline {
           steps {
             withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
               container('maven') {
-                sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
+                sh 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
               }
             }
           }
