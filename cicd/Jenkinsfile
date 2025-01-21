@@ -137,23 +137,25 @@ pipeline {
       }
       agent { label 'docker' }
       steps {
-        sh 'echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"'
-        script {
-          switch (BRANCH_NAME) {
-            case 'main':
-              EXPOSE_PORT = '8081'
-              break
-            case 'test':
-              EXPOSE_PORT = '8082'
-              break
-            case 'develop':
-              EXPOSE_PORT = '8083'
-              break
-            default:
-              currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
-              sh 'docker compose -f cicd/compose.yaml down'
-              sh 'docker compose -f cicd/compose.yaml up --detach'
+        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER')]) {
+          sh 'echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"'
+          script {
+            switch (BRANCH_NAME) {
+              case 'main':
+                EXPOSE_PORT = '8081'
+                break
+              case 'test':
+                EXPOSE_PORT = '8082'
+                break
+              case 'develop':
+                EXPOSE_PORT = '8083'
+                break
+              default:
+                currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
+            }
           }
+          sh 'docker compose -f cicd/compose.yaml down'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
         }
       }
     }
