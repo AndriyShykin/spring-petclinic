@@ -142,17 +142,19 @@ pipeline {
           script {
             switch (BRANCH_NAME) {
               case 'main':
-                EXPOSE_PORT = '8081'
+                EXPOSE_PORT = 8081
                 break
               case 'test':
-                EXPOSE_PORT = '8082'
+                EXPOSE_PORT = 8082
                 break
               case 'develop':
-                EXPOSE_PORT = '8083'
+                EXPOSE_PORT = 8083
                 break
               default:
-                currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
+                currentBuild.result = 'ABORTED'
+                error('Stopping early…')
             }
+            sh 'echo "Using EXPOSE_PORT: $EXPOSE_PORT"'
             sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username "$IMAGE_REGISTRY_USER" --password-stdin'
             sh 'docker compose -f cicd/compose.yaml down'
             sh 'docker compose -f cicd/compose.yaml up --detach'
