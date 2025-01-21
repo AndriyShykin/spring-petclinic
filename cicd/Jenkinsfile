@@ -137,9 +137,22 @@ pipeline {
       }
       agent { label 'docker' }
       steps {
-        sh 'echo "Using BRANCH_NAME: ${BRANCH_NAME}"'
-        sh 'docker compose down'
-        sh 'docker compose up --detach'
+        sh 'echo "Deploying BRANCH_NAME: $BRANCH_NAME"'
+        switch (BRANCH_NAME) {
+          case 'main':
+            EXPOSE_PORT = '8081'
+            break
+          case 'test':
+            EXPOSE_PORT = '8082'
+            break
+          case 'develop':
+            EXPOSE_PORT = '8083'
+            break
+          default:
+            currentBuild.getRawBuild().getExecutor().interrupt(Result.FAILURE)
+            sh 'docker compose down'
+            sh 'docker compose up --detach'
+        }
       }
     }
   }
