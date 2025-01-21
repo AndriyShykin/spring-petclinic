@@ -137,7 +137,7 @@ pipeline {
       }
       agent { label 'docker' }
       steps {
-        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER')]) {
+        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
           sh 'echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"'
           script {
             switch (BRANCH_NAME) {
