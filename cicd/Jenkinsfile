@@ -145,7 +145,7 @@ pipeline {
             }
           }
           echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
-          sh('printf ${IMAGE_REGISTRY_PASSWORD}\\n | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
+          sh('echo ${IMAGE_REGISTRY_PASSWORD} | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
           sh('export EXPOSE_PORT=${EXPOSE_PORT} ; docker compose -f cicd/compose.yaml down')
           sh('export EXPOSE_PORT=${EXPOSE_PORT} ; docker compose -f cicd/compose.yaml up --detach')
           sh 'docker logout'
