@@ -78,7 +78,7 @@ pipeline {
             triggeredBy 'UserIdCause'
           }
           expression {
-            env.BRANCH_NAME in ['main', 'test', 'developq']
+            env.BRANCH_NAME in ['main', 'test', 'develop']
           }
         }
       }
@@ -143,9 +143,9 @@ pipeline {
             }
           }
           echo "Using EXPOSE_PORT: $EXPOSE_PORT"
-          echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"
-          sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username "$IMAGE_REGISTRY_USER" --password-stdin'
-          sh 'export EXPOSE_PORT="${EXPOSE_PORT}" ; export COMPOSE_FILE="${WORKSPACE}/cicd/compose.yaml" ; docker compose down && docker compose up --detach'
+          sh ('printf ${IMAGE_REGISTRY_PASSWORD}\n | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
+          sh ('export EXPOSE_PORT=${EXPOSE_PORT} ; docker compose -f cicd/compose.yaml down')
+          sh ('export EXPOSE_PORT=${EXPOSE_PORT} ; docker compose -f cicd/compose.yaml up --detach')
           sh 'docker logout'
         }
       }
