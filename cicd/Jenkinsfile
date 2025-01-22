@@ -111,9 +111,10 @@ pipeline {
                       echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
                    '''
                 sh 'cp target/*.jar cicd/app.jar'
-                sh '''#!/busybox/sh
-                      /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
-                   '''
+        ///        sh '''#!/busybox/sh
+        ///              /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
+        ///           '''
+                sh '/kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:latest --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT --image-name-tag-with-digest-file image.txt'
                 archiveArtifacts artifacts: 'image.txt', fingerprint: true
               }
             }
@@ -145,7 +146,6 @@ pipeline {
             }
           }
           echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
-          echo EXPOSE_PORT > exposePort
           sh '1 $EXPOSE_PORT 2 ${EXPOSE_PORT} 3 "${EXPOSE_PORT}" 4 "$EXPOSE_PORT"'
           sh('echo ${IMAGE_REGISTRY_PASSWORD} | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
           sh('export EXPOSE_PORT=$(cat exposePort) ; docker compose -f cicd/compose.yaml down')
