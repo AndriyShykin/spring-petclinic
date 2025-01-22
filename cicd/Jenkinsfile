@@ -2,6 +2,7 @@ pipeline {
   agent none
   environment {
     PROJECT = 'spring-petclinic'
+    EXPOSE_PORT = 0
   }
   stages {
     stage('Maven') {
@@ -39,7 +40,7 @@ pipeline {
         stage('test') {
           steps {
             container('maven') {
-              mvn -B clean test
+              sh 'mvn -B clean test'
             }
           }
           post {
@@ -136,18 +137,17 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
           script {
             switch (BRANCH_NAME) {
-              case 'main': EXPOSE_PORT = 8081; break
-              case 'test': EXPOSE_PORT = 8082; break
-              case 'develop': EXPOSE_PORT = 8083; break
+              case 'main': env.EXPOSE_PORT = 8081; break
+              case 'test': env.EXPOSE_PORT = 8082; break
+              case 'develop': env.EXPOSE_PORT = 8083; break
               default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
             echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"
             echo "Using EXPOSE_PORT: $EXPOSE_PORT"
-            printf "\$IMAGE_REGISTRY_PASSWORD\\n" | docker login --username "\$IMAGE_REGISTRY_USER" --password-stdin
-            docker compose -f 'cicd/compose.yaml' down
-            docker compose -f 'cicd/compose.yaml' up --detach
-            docker logout
           }
+          sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username "$IMAGE_REGISTRY_USER" --password-stdin'
+          sh 'export EXPOSE_PORT="${env.EXPOSE_PORT}" ; export COMPOSE_FILE="${WORKSPACE}/cicd/compose.yaml" ; docker compose down && docker compose up --detach'
+          sh 'docker logout'
         }
       }
     }
