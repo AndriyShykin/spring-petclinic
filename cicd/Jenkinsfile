@@ -122,6 +122,9 @@ pipeline {
       }
     }
     stage('Deploy') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
       when {
         allOf {
           anyOf {
@@ -140,6 +143,20 @@ pipeline {
           sh 'docker compose -f cicd/compose.yaml down'
           sh 'docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
+        }
+        script {
+          delayMs = 2000
+          def healthCheckPassed = false
+          while (!healthCheckPassed) {
+            def getStatus = sh(script: "curl --silent --fail http://localhost:${env.EXPOSE_PORT}/actuator/health", returnStatus: true)
+            if (getStatus == 0) {
+              healthCheckPassed = true
+              echo "Health check passed!"
+            } else {
+              echo "Health check failed, retrying in ${delayMs} ms..."
+              sleep(delayMs)
+            }
+          }
         }
       }
     }
