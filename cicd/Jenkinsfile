@@ -150,6 +150,7 @@ pipeline {
             sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
             sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
           }
+          echo "${EXPOSE_PORT}"
           sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username \$IMAGE_REGISTRY_USER --password-stdin'
           sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
           sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
