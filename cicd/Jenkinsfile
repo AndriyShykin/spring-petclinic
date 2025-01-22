@@ -134,7 +134,6 @@ pipeline {
       agent { label "${ENV_LABEL}" }
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
-          echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
           sh 'echo $IMAGE_REGISTRY_PASSWORD | docker login --username $IMAGE_REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
           sh 'docker compose -f cicd/compose.yaml up --detach'
