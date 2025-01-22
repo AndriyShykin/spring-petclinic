@@ -145,7 +145,7 @@ pipeline {
           sh 'docker logout'
         }
         script {
-          delayMs = 2000
+          delaySec = 4
           def healthCheckPassed = false
           while (!healthCheckPassed) {
             def getStatus = sh(script: "curl --silent --fail http://localhost:${env.EXPOSE_PORT}/actuator/health", returnStatus: true)
@@ -153,8 +153,8 @@ pipeline {
               healthCheckPassed = true
               echo "Health check passed!"
             } else {
-              echo "Health check failed, retrying in ${delayMs} ms..."
-              sleep(delayMs)
+              echo "Health check failed, retrying in ${delaySec} seconds..."
+              sleep(delaySec)
             }
           }
         }
