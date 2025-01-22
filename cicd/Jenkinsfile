@@ -39,7 +39,7 @@ pipeline {
         stage('test') {
           steps {
             container('maven') {
-              sh 'mvn -B clean test'
+              mvn -B clean test
             }
           }
           post {
