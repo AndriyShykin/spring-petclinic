@@ -109,11 +109,7 @@ pipeline {
                 unstash 'package'
                 sh '''#!/busybox/sh
                       echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
-                   '''
-                sh '''#!/busybox/sh
                       cp target/*.jar cicd/app.jar
-                   '''
-                sh '''#!/busybox/sh
                       /kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:latest --destination \$IMAGE_REGISTRY_USER/\$PROJECT\\-\$BRANCH_NAME:\$GIT_COMMIT --image-name-tag-with-digest-file image.txt
                    '''
                 archiveArtifacts artifacts: 'image.txt', fingerprint: true
@@ -138,7 +134,6 @@ pipeline {
       agent { label 'docker' }
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
-          sh 'echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"'
           script {
             switch (BRANCH_NAME) {
               case 'main': EXPOSE_PORT = 8081; break
@@ -146,15 +141,13 @@ pipeline {
               case 'develop': EXPOSE_PORT = 8083; break
               default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
-            echo "${EXPOSE_PORT}"
-            sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
-            sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
+            echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"
+            echo "Using EXPOSE_PORT: ${EXPOSE_PORT}"
+            printf \$IMAGE_REGISTRY_PASSWORD\\n | docker login --username \$IMAGE_REGISTRY_USER --password-stdin
+            docker compose -f cicd/compose.yaml down
+            docker compose -f cicd/compose.yaml up --detach
+            docker logout
           }
-          echo "${EXPOSE_PORT}"
-          sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username \$IMAGE_REGISTRY_USER --password-stdin'
-          sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
-          sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
-          sh 'docker logout'
         }
       }
     }
