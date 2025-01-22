@@ -1,5 +1,5 @@
 services:
   petclinic:
-    image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:latest
+    image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT
     ports:
       - "$EXPOSE_PORT:8080"
