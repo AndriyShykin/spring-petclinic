@@ -142,25 +142,17 @@ pipeline {
           sh 'echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"'
           script {
             switch (BRANCH_NAME) {
-              case 'main':
-                EXPOSE_PORT = '8081'
-                break
-              case 'test':
-                EXPOSE_PORT = '8082'
-                break
-              case 'develop':
-                env.EXPOSE_PORT = '8083'
-                break
-              default:
-                currentBuild.result = 'ABORTED'
-                error('Stopping early…')
+              case 'main': EXPOSE_PORT = 8081; break
+              case 'test': EXPOSE_PORT = 8082; break
+              case 'develop': export EXPOSE_PORT = 8083; break
+              default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
             sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
-            sh 'echo \$EXPOSE_PORT echo \\$EXPOSE_PORT docker compose -f cicd/compose.yaml up --detach'
+            sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
           }
           sh 'printf "$IMAGE_REGISTRY_PASSWORD\n" | docker login --username \$IMAGE_REGISTRY_USER --password-stdin'
           sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
-          sh 'echo \$EXPOSE_PORT echo \\$EXPOSE_PORT docker compose -f cicd/compose.yaml up --detach'
+          sh 'echo \$EXPOSE_PORT echo "${EXPOSE_PORT}" docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
       }
