@@ -144,7 +144,7 @@ pipeline {
             switch (BRANCH_NAME) {
               case 'main': EXPOSE_PORT = 8081; break
               case 'test': EXPOSE_PORT = 8082; break
-              case 'develop': export EXPOSE_PORT = 8083; break
+              case 'develop': EXPOSE_PORT = 8083; break
               default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
             sh 'echo $EXPOSE_PORT echo ${EXPOSE_PORT} docker compose -f cicd/compose.yaml down'
