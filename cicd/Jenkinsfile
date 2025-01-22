@@ -2,6 +2,7 @@ pipeline {
   agent none
   environment {
     APP_NAME = 'spring-petclinic'
+    ENV_HOST = 'docker-1.lan'
     ENV_LABEL = 'docker'
     EXPOSE_PORT = 8081
     REGISTRY_SECRET_NAME = 'docker'
@@ -148,7 +149,7 @@ pipeline {
           delaySec = 4
           def healthCheckPassed = false
           while (!healthCheckPassed) {
-            def getStatus = sh(script: "curl --silent --fail http://localhost:${env.EXPOSE_PORT}/actuator/health", returnStatus: true)
+            def getStatus = sh(script: "curl --silent --fail http://${env.ENV_HOST}:${env.EXPOSE_PORT}/actuator/health", returnStatus: true)
             if (getStatus == 0) {
               healthCheckPassed = true
               echo "Health check passed!"
