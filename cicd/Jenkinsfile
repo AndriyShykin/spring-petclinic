@@ -107,10 +107,6 @@ pipeline {
             withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
               container(name: 'kaniko', shell: '/busybox/sh') {
                 unstash 'package'
-        ///        sh '''#!/busybox/sh
-        ///              echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD" | base64 | tr -d '\\n')\\\"}}}" > /kaniko/.docker/config.json
-        ///           '''
-                
                 sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n "$IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD" | base64 | tr -d \\n)\\\"}}}" > /kaniko/.docker/config.json'
                 sh 'cp target/*.jar cicd/app.jar'
                 sh '/kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:latest --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT --image-name-tag-with-digest-file image.txt'
@@ -141,7 +137,7 @@ pipeline {
               case 'main': env.EXPOSE_PORT = 8081; break
               case 'test': env.EXPOSE_PORT = 8082; break
               case 'develop': env.EXPOSE_PORT = 8083; break
-              default: currentBuild.result = 'ABORTED'; error('Stopping early…')
+              default: currentBuild.result = 'ABORTED'; error('Please check branch…')
             }
           }
           echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
