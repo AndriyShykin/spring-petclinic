@@ -1,0 +1,165 @@
+pipeline {
+  agent none
+  environment {
+    PROJECT = 'spring-petclinic'
+  }
+  stages {
+    stage('Maven') {
+      when {
+        anyOf {
+          changeset "src/**"
+          triggeredBy 'UserIdCause'
+        }
+      }
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - cat
+                  image: maven:3.9.9-eclipse-temurin-23-alpine
+                  name: maven
+                  tty: true
+                  volumeMounts:
+                  - mountPath: /root/truststore.p12
+                    name: truststore
+                    readOnly: true
+                    subPath: truststore.p12
+                volumes:
+                - name: truststore
+                  secret:
+                    secretName: sonar-truststore        
+              """
+        }
+      }
+      stages {
+        stage('test') {
+          steps {
+            container('maven') {
+              sh 'mvn -B clean test'
+            }
+          }
+          post {
+            always {
+              container('maven') {
+                junit '**/target/surefire-reports/*.xml'
+              }
+            }
+          }
+        }
+        stage('package') {
+          steps {
+            container('maven') {
+              sh 'mvn -B package -DskipTests'
+              stash includes: '**/target/*.jar', name: 'package'
+              archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+            }
+          }
+        }
+        stage('sonar') {
+          steps {
+            withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')]) {
+              container('maven') {
+                sh 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Kaniko') {
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
+        }
+      }
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - /busybox/sleep
+                  - infinity
+                  image: gcr.io/kaniko-project/executor:debug
+                  name: kaniko
+                  tty: true
+              """
+        }
+      }
+      stages {
+        stage('build image') {
+          environment {
+            PATH = "/busybox:/kaniko:$PATH"
+          }
+          steps {
+            withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
+              container(name: 'kaniko', shell: '/busybox/sh') {
+                unstash 'package'
+                sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n $IMAGE_REGISTRY_USER:$IMAGE_REGISTRY_PASSWORD | base64)\\\"}}}" > /kaniko/.docker/config.json'
+                sh 'cp target/*.jar cicd/app.jar'
+                sh '/kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:latest --destination $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT --image-name-tag-with-digest-file image.txt'
+                archiveArtifacts artifacts: 'image.txt', fingerprint: true
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy') {
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
+        }
+      }
+      agent { label 'docker' }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
+          script {
+            switch (BRANCH_NAME) {
+              case 'main': env.EXPOSE_PORT = 8081; break
+              case 'test': env.EXPOSE_PORT = 8082; break
+              case 'develop': env.EXPOSE_PORT = 8083; break
+              default: currentBuild.result = 'ABORTED'; error('Please check branch…')
+            }
+          }
+          echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
+          sh 'echo $IMAGE_REGISTRY_PASSWORD | docker login --username $IMAGE_REGISTRY_USER --password-stdin'
+          sh 'docker compose -f cicd/compose.yaml down'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
+          sh 'docker logout'
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        if (env.BRANCH_NAME in ['main', 'test', 'develop']) {
+          if (currentBuild.currentResult == 'FAILURE' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
+            mail to: "${env.EMAIL_RECIPIENT}",
+                subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+                body: """Console output: ${env.BUILD_URL}"""
+          }
+        }
+      }
+    }
+  }
+}
