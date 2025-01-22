@@ -142,8 +142,8 @@ pipeline {
               default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
             echo "Deploying image: $IMAGE_REGISTRY_USER/$PROJECT-$BRANCH_NAME:$GIT_COMMIT"
-            echo "Using EXPOSE_PORT: ${EXPOSE_PORT}"
-            printf \$IMAGE_REGISTRY_PASSWORD\\n | docker login --username \$IMAGE_REGISTRY_USER --password-stdin
+            echo "Using EXPOSE_PORT: $EXPOSE_PORT"
+            printf "\$IMAGE_REGISTRY_PASSWORD\\n" | docker login --username "\$IMAGE_REGISTRY_USER" --password-stdin
             docker compose -f cicd/compose.yaml down
             docker compose -f cicd/compose.yaml up --detach
             docker logout
