@@ -139,17 +139,17 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'IMAGE_REGISTRY_USER', passwordVariable: 'IMAGE_REGISTRY_PASSWORD')]) {
           script {
             switch (BRANCH_NAME) {
-              case 'main': EXPOSE_PORT = 8081; break
-              case 'test': EXPOSE_PORT = 8082; break
+              case 'main': env.EXPOSE_PORT = 8081; break
+              case 'test': env.EXPOSE_PORT = 8082; break
               case 'develop': env.EXPOSE_PORT = 8083; break
               default: currentBuild.result = 'ABORTED'; error('Stopping early…')
             }
           }
-          echo 'Using EXPOSE_PORT: ' + EXPOSE_PORT
+          echo EXPOSE_PORT
           sh '1 $EXPOSE_PORT 2 ${EXPOSE_PORT} 3 "${EXPOSE_PORT}" 4 "$EXPOSE_PORT"'
           sh('echo ${IMAGE_REGISTRY_PASSWORD} | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
-          sh('export EXPOSE_PORT=$(cat exposePort) ; docker compose -f cicd/compose.yaml down')
-          sh('export EXPOSE_PORT="$EXPOSE_PORT" ; docker compose -f cicd/compose.yaml up --detach')
+          sh('docker compose -f cicd/compose.yaml down')
+          sh('docker compose -f cicd/compose.yaml up --detach')
           sh 'docker logout'
         }
       }
