@@ -147,9 +147,9 @@ pipeline {
           }
           echo EXPOSE_PORT
           sh '1 $EXPOSE_PORT 2 ${EXPOSE_PORT} 3 "${EXPOSE_PORT}" 4 "$EXPOSE_PORT"'
-          sh('echo ${IMAGE_REGISTRY_PASSWORD} | docker login --username ${IMAGE_REGISTRY_USER} --password-stdin')
-          sh('docker compose -f cicd/compose.yaml down')
-          sh('docker compose -f cicd/compose.yaml up --detach')
+          sh 'echo $IMAGE_REGISTRY_PASSWORD | docker login --username $IMAGE_REGISTRY_USER --password-stdin'
+          sh 'docker compose -f cicd/compose.yaml down'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
       }
