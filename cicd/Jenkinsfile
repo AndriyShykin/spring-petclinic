@@ -4,15 +4,9 @@ pipeline {
     APP_NAME = 'spring-petclinic'
     ENV_HOST = 'docker-1.lan'
     ENV_LABEL = 'docker'
-    EXPOSE_PORT = 8081
+
     REGISTRY_SECRET_NAME = 'docker'
     SONAR_SECRET_NAME = 'sonar'
-  }
-  when {
-    anyOf {
-      changeset "src/**"
-      triggeredBy 'UserIdCause'
-    }
   }
   stages {
     stage('Maven') {
@@ -130,6 +124,7 @@ pipeline {
     }
     stage('Deploy') {
       environment {
+        EXPOSE_PORT = 8081
         MYSQL_DATABASE = 'petclinic'
         MYSQL_PASSWORD = ''
         MYSQL_ROOT_PASSWORD = ''
