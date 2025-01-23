@@ -151,9 +151,10 @@ pipeline {
                          usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'SPRING_DATASOURCE_USERNAME', passwordVariable: 'SPRING_DATASOURCE_PASSWORD'),
                          usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
                          string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
+          sh 'env'
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
-          sh 'docker compose -f cicd/compose.yaml up --detach'
+          sh 'env && docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
         script {
