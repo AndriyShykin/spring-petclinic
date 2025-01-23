@@ -4,7 +4,7 @@ pipeline {
     APP_NAME = 'spring-petclinic'
     ENV_HOST = 'docker-1.lan'
     ENV_LABEL = 'docker'
-
+    EXPOSE_PORT = 8081
     REGISTRY_SECRET_NAME = 'docker'
     SONAR_SECRET_NAME = 'sonar'
   }
@@ -123,14 +123,6 @@ pipeline {
       }
     }
     stage('Deploy') {
-      environment {
-        EXPOSE_PORT = 8081
-        MYSQL_DATABASE = 'petclinic'
-        SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
-        
-        SPRING_PROFILES_ACTIVE = "MySQL"
-        SPRING_DATASOURCE_URL = 'jdbc:mysql://mysql:3306/petclinic?useUnicode=true'
-      }
       options {
         timeout(time: 300, unit: 'SECONDS')
       }
@@ -148,13 +140,11 @@ pipeline {
       agent { label "${ENV_LABEL}" }
       steps {
         withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_NAME, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD'),
-                         usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'SPRING_DATASOURCE_USERNAME', passwordVariable: 'SPRING_DATASOURCE_PASSWORD'),
                          usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
                          string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
-          sh 'env'
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
-          sh 'env && docker compose -f cicd/compose.yaml up --detach'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
         script {
