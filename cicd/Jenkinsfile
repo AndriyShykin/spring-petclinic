@@ -77,13 +77,13 @@ pipeline {
     }
     stage('Kaniko') {
       when {
-        anyOf {
-          triggeredBy 'UserIdCause'
-          allOf {
+        allOf {
+          anyOf {
             changeset "src/main/**"
-            expression {
-              env.BRANCH_NAME in ['main', 'test', 'develop']
-            }
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
           }
         }
       }
@@ -127,13 +127,13 @@ pipeline {
         timeout(time: 300, unit: 'SECONDS')
       }
       when {
-        anyOf {
-          triggeredBy 'UserIdCause'
-          allOf {
+        allOf {
+          anyOf {
             changeset "src/main/**"
-            expression {
-              env.BRANCH_NAME in ['main', 'test', 'develop']
-            }
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
           }
         }
       }
