@@ -7,16 +7,6 @@ pipeline {
     EXPOSE_PORT = 8081
     REGISTRY_SECRET_NAME = 'docker'
     SONAR_SECRET_NAME = 'sonar'
-
-    MYSQL_DATABASE = 'petclinic'
-    MYSQL_PASSWORD = ''
-    MYSQL_ROOT_PASSWORD = ''
-    MYSQL_USER = ''
-    SPRING_DATASOURCE_URL = ''
-    SPRING_DATASOURCE_USERNAME = ''
-    SPRING_DATASOURCE_PASSWORD = ''
-    SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
-    SPRING_PROFILES_ACTIVE = ''
   }
   stages {
     stage('Maven') {
@@ -133,6 +123,18 @@ pipeline {
       }
     }
     stage('Deploy') {
+      environment {
+        MYSQL_DATABASE = 'petclinic'
+        MYSQL_PASSWORD = ''
+        MYSQL_ROOT_PASSWORD = ''
+        MYSQL_USER = ''
+        SPRING_DATASOURCE_USERNAME = ''
+        SPRING_DATASOURCE_PASSWORD = ''
+        SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
+        
+        SPRING_PROFILES_ACTIVE = "MySQL"
+        SPRING_DATASOURCE_URL = 'jdbc:mysql://mysql:3306/petclinic?useUnicode=true'
+      }
       options {
         timeout(time: 300, unit: 'SECONDS')
       }
@@ -155,9 +157,10 @@ pipeline {
                          string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
-          sh 'export SPRING_PROFILES_ACTIVE = "MySQL" ; export SPRING_DATASOURCE_URL = "jdbc:mysql://mysql:3306/petclinic?useUnicode=true" ; docker compose -f cicd/compose.yaml up --detach'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
+        withEn([])
         script {
           delaySec = 4
           def healthCheckPassed = false
