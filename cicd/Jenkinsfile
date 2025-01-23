@@ -16,7 +16,7 @@ pipeline {
     SPRING_DATASOURCE_USERNAME = ''
     SPRING_DATASOURCE_PASSWORD = ''
     SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
-    SPRING_PROFILES_ACTIVE = 'MySQL'
+    SPRING_PROFILES_ACTIVE = ''
   }
   stages {
     stage('Maven') {
@@ -155,7 +155,7 @@ pipeline {
                          string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
-          sh 'docker compose -f cicd/compose.yaml up --detach'
+          sh 'export SPRING_PROFILES_ACTIVE = "MySQL" ; docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
         script {
