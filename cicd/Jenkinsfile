@@ -149,7 +149,10 @@ pipeline {
       }
       agent { label "${ENV_LABEL}" }
       steps {
-        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+        withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_NAME, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD'),
+                         usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'SPRING_DATASOURCE_USERNAME', passwordVariable: 'SPRING_DATASOURCE_PASSWORD'),
+                         usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
+                         string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
           sh 'docker compose -f cicd/compose.yaml up --detach'
