@@ -8,15 +8,15 @@ pipeline {
     REGISTRY_SECRET_NAME = 'docker'
     SONAR_SECRET_NAME = 'sonar'
 
-    MYSQL_DATABASE=petclinic
-    MYSQL_PASSWORD=''
-    MYSQL_ROOT_PASSWORD=''
-    MYSQL_USER=''
-    SPRING_DATASOURCE_URL='jdbc:mysql://mysql:3306/petclinic?useUnicode=true'
-    SPRING_DATASOURCE_USERNAME=''
-    SPRING_DATASOURCE_PASSWORD=''
-    SPRING_JPA_HIBERNATE_DDL_AUTO=update
-    SPRING_PROFILES_ACTIVE=MySQL
+    MYSQL_DATABASE = 'petclinic'
+    MYSQL_PASSWORD = ''
+    MYSQL_ROOT_PASSWORD = ''
+    MYSQL_USER = ''
+    SPRING_DATASOURCE_URL = 'jdbc:mysql://mysql:3306/petclinic?useUnicode=true'
+    SPRING_DATASOURCE_USERNAME = ''
+    SPRING_DATASOURCE_PASSWORD = ''
+    SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
+    SPRING_PROFILES_ACTIVE = 'MySQL'
   }
   stages {
     stage('Maven') {
