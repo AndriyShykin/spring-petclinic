@@ -126,11 +126,6 @@ pipeline {
       environment {
         EXPOSE_PORT = 8081
         MYSQL_DATABASE = 'petclinic'
-        MYSQL_PASSWORD = ''
-        MYSQL_ROOT_PASSWORD = ''
-        MYSQL_USER = ''
-        SPRING_DATASOURCE_USERNAME = ''
-        SPRING_DATASOURCE_PASSWORD = ''
         SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
         
         SPRING_PROFILES_ACTIVE = "MySQL"
