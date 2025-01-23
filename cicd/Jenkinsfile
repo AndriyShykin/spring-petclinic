@@ -161,7 +161,6 @@ pipeline {
           sh 'docker compose -f cicd/compose.yaml up --detach'
           sh 'docker logout'
         }
-        withEn([])
         script {
           delaySec = 4
           def healthCheckPassed = false
