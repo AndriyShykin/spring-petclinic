@@ -8,6 +8,12 @@ pipeline {
     REGISTRY_SECRET_NAME = 'docker'
     SONAR_SECRET_NAME = 'sonar'
   }
+  when {
+    anyOf {
+      changeset "src/**"
+      triggeredBy 'UserIdCause'
+    }
+  }
   stages {
     stage('Maven') {
       when {
