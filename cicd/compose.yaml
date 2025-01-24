@@ -2,14 +2,26 @@ services:
   petclinic:
     depends_on:
       - mysql
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 512M
     env_file: env_file
     image: $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
     ports:
       - "$EXPOSE_PORT:8080"
+    restart: always
   mysql:
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 512M
     env_file: env_file
-    image: mysql:9.1
     expose:
       - 3306
+    image: mysql:9.2
+    restart: always
     volumes:
       - ../conf.d:/etc/mysql/conf.d:ro
