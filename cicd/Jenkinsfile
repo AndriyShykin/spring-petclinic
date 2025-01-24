@@ -12,6 +12,9 @@ pipeline {
   }
   stages {
     stage('Maven') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
       when {
         anyOf {
           changeset "src/**"
@@ -78,6 +81,9 @@ pipeline {
       }
     }
     stage('Kaniko') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
       when {
         allOf {
           anyOf {
