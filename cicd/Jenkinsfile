@@ -13,7 +13,7 @@ pipeline {
   stages {
     stage('Maven') {
       options {
-        timeout(time: 300, unit: 'SECONDS')
+        timeout(time: 600, unit: 'SECONDS')
       }
       when {
         anyOf {
