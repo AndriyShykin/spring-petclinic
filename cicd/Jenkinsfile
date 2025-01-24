@@ -1,0 +1,188 @@
+pipeline {
+  agent none
+  environment {
+    APP_NAME = 'spring-petclinic'
+    ENV_HOST = 'docker-1.lan'
+    ENV_LABEL = 'docker'
+    EXPOSE_PORT = 8081
+    REGISTRY_SECRET_ID = 'docker'
+    SONAR_SECRET_ID = 'sonar'
+    DB_USER_SECRET_ID = 'petclinic-db-user-secret'
+    DB_ROOT_PASSWORD_ID = 'petclinic-db-root-password'
+  }
+  stages {
+    stage('Maven') {
+      options {
+        timeout(time: 600, unit: 'SECONDS')
+      }
+      when {
+        anyOf {
+          changeset "src/**"
+          triggeredBy 'UserIdCause'
+        }
+      }
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - cat
+                  image: maven:3.9.9-eclipse-temurin-23-alpine
+                  name: maven
+                  tty: true
+                  volumeMounts:
+                  - mountPath: /root/truststore.p12
+                    name: truststore
+                    readOnly: true
+                    subPath: truststore.p12
+                volumes:
+                - name: truststore
+                  secret:
+                    secretName: sonar-truststore        
+              """
+        }
+      }
+      stages {
+        stage('test') {
+          steps {
+            container('maven') {
+              sh 'mvn -B clean test'
+            }
+          }
+          post {
+            always {
+              container('maven') {
+                junit '**/target/surefire-reports/*.xml'
+              }
+            }
+          }
+        }
+        stage('package') {
+          steps {
+            container('maven') {
+              sh 'mvn -B package -DskipTests'
+              stash includes: '**/target/*.jar', name: 'package'
+              archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+            }
+          }
+        }
+        stage('sonar') {
+          steps {
+            withCredentials([string(credentialsId: SONAR_SECRET_ID, variable: 'SONAR_TOKEN')]) {
+              container('maven') {
+                sh 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Kaniko') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
+        }
+      }
+      agent {
+        kubernetes {
+          yaml """
+              apiVersion: v1
+              kind: Pod
+              spec:
+                containers:
+                - command:
+                  - /busybox/sleep
+                  - infinity
+                  image: gcr.io/kaniko-project/executor:debug
+                  name: kaniko
+                  tty: true
+              """
+        }
+      }
+      stages {
+        stage('build image') {
+          environment {
+            PATH = "/busybox:/kaniko:$PATH"
+          }
+          steps {
+            withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+              container(name: 'kaniko', shell: '/busybox/sh') {
+                unstash 'package'
+                sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n $REGISTRY_USER:$REGISTRY_PASSWORD | base64)\\\"}}}" > /kaniko/.docker/config.json'
+                sh 'cp target/*.jar cicd/app.jar'
+                sh '/kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:latest --destination $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT --image-name-tag-with-digest-file image.txt'
+                archiveArtifacts artifacts: 'image.txt', fingerprint: true
+              }
+            }
+          }
+        }
+      }
+    }
+    stage('Deploy') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test', 'develop']
+          }
+        }
+      }
+      agent { label "${ENV_LABEL}" }
+      steps {
+        withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD'),
+                         usernamePassword(credentialsId: DB_USER_SECRET_ID, usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
+                         string(credentialsId: DB_ROOT_PASSWORD_ID, variable: 'MYSQL_ROOT_PASSWORD')]) {
+          sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
+          sh 'docker compose -f cicd/compose.yaml down'
+          sh 'docker compose -f cicd/compose.yaml up --detach'
+          sh 'docker logout'
+        }
+        script {
+          delaySec = 4
+          def healthCheckPassed = false
+          while (!healthCheckPassed) {
+            def getStatus = sh(script: "curl --silent --fail http://${env.ENV_HOST}:${env.EXPOSE_PORT}/actuator/health", returnStatus: true)
+            if (getStatus == 0) {
+              healthCheckPassed = true
+              echo "Health check passed!"
+            } else {
+              echo "Health check failed, retrying in ${delaySec} seconds..."
+              sleep(delaySec)
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        if (env.BRANCH_NAME in ['main', 'test', 'develop']) {
+          if (currentBuild.currentResult == 'FAILURE' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
+            mail to: "${env.EMAIL_RECIPIENT}",
+                subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+                body: """Console output: ${env.BUILD_URL}"""
+          }
+        }
+      }
+    }
+  }
+}
