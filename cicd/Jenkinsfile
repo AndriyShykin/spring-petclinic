@@ -5,8 +5,10 @@ pipeline {
     ENV_HOST = 'docker-1.lan'
     ENV_LABEL = 'docker'
     EXPOSE_PORT = 8081
-    REGISTRY_SECRET_NAME = 'docker'
-    SONAR_SECRET_NAME = 'sonar'
+    REGISTRY_SECRET_ID = 'docker'
+    SONAR_SECRET_ID = 'sonar'
+    DB_USER_SECRET_ID = 'petclinic-db-user-secret'
+    DB_ROOT_PASSWORD_ID = 'petclinic-db-root-password'
   }
   stages {
     stage('Maven') {
@@ -66,7 +68,7 @@ pipeline {
         }
         stage('sonar') {
           steps {
-            withCredentials([string(credentialsId: SONAR_SECRET_NAME, variable: 'SONAR_TOKEN')]) {
+            withCredentials([string(credentialsId: SONAR_SECRET_ID, variable: 'SONAR_TOKEN')]) {
               container('maven') {
                 sh 'mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar -Dsonar.scanner.truststorePath=/root/truststore.p12'
               }
@@ -109,7 +111,7 @@ pipeline {
             PATH = "/busybox:/kaniko:$PATH"
           }
           steps {
-            withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_NAME, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+            withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
               container(name: 'kaniko', shell: '/busybox/sh') {
                 unstash 'package'
                 sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n $REGISTRY_USER:$REGISTRY_PASSWORD | base64)\\\"}}}" > /kaniko/.docker/config.json'
@@ -139,9 +141,9 @@ pipeline {
       }
       agent { label "${ENV_LABEL}" }
       steps {
-        withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_NAME, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD'),
-                         usernamePassword(credentialsId: 'petclinic-db-user-secret', usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
-                         string(credentialsId: 'petclinic-db-root-password', variable: 'MYSQL_ROOT_PASSWORD')]) {
+        withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD'),
+                         usernamePassword(credentialsId: DB_USER_SECRET_ID, usernameVariable: 'MYSQL_USER', passwordVariable: 'MYSQL_PASSWORD'),
+                         string(credentialsId: DB_ROOT_PASSWORD_ID, variable: 'MYSQL_ROOT_PASSWORD')]) {
           sh 'echo $REGISTRY_PASSWORD | docker login --username $REGISTRY_USER --password-stdin'
           sh 'docker compose -f cicd/compose.yaml down'
           sh 'docker compose -f cicd/compose.yaml up --detach'
