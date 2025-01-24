@@ -1,5 +1,7 @@
 services:
   petclinic:
+    depends_on:
+      - mysql
     env_file: env_file
     image: $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
     ports:
