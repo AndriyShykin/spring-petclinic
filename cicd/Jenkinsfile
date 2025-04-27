@@ -38,10 +38,15 @@ pipeline {
                     name: truststore
                     readOnly: true
                     subPath: truststore.p12
+                  - mountPath: /root/.m2
+                    name: m2
                 volumes:
                 - name: truststore
                   secret:
-                    secretName: sonar-truststore        
+                    secretName: sonar-truststore
+                - name: m2
+                  persistentVolumeClaim:
+                    claimName: m2
               """
         }
       }
