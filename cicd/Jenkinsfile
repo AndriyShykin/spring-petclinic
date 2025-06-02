@@ -69,7 +69,7 @@ stage('Build Image') {
           sh 'cp target/*.jar app.jar'
           sh 'cp cicd/Dockerfile .'
           sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com'
-          sh 'docker buildx build --provenance --metadata-file metadata.json --tag $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker buildx build --metadata-file metadata.json --tag $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'docker push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker image rm $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker logout'
