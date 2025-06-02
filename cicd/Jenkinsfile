@@ -10,6 +10,7 @@ pipeline {
     AWS_CRED_ID='jenkins-aws'
   }
   options {
+    disableConcurrentBuilds()
     preserveStashes()
   }
   stages {
@@ -78,7 +79,7 @@ stage('Build Image') {
           sh 'docker image push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker manifest inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > manifest.json'
           sh 'docker image rm $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
-          sh 'docker logout'
+          sh 'docker logout $IMAGE_REGISTRY'
           archiveArtifacts artifacts: 'manifest.json', fingerprint: true
         }
       }
