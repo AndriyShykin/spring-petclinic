@@ -67,7 +67,7 @@ stage('Build Image') {
           unstash 'package'
           sh 'cp target/*.jar ./app.jar'
           sh 'export DOCKER_HOST=$DOCKER_HOST_'
-          sh 'docker build -f ./cicd/Dockerfile -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker buildx build -f ./cicd/Dockerfile -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'aws sts get-caller-identity'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
         }
