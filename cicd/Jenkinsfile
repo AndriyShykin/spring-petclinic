@@ -13,6 +13,7 @@ pipeline {
     stage('Build App') {
       options {
         timeout(time: 600, unit: 'SECONDS')
+        preserveStashes()
       }
       when {
         allOf {
