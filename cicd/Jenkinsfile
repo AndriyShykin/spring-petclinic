@@ -1,0 +1,31 @@
+pipeline {
+  agent none
+  environment {
+    APP_NAME = 'petclinic'
+  }
+  stages {
+    stage('Build') {
+      options {
+        timeout(time: 300, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
+        }
+      }
+      agent { docker { image 'maven:3.9.9-eclipse-temurin-24-alpine' } }
+      steps {
+        withCredentials() {
+          sh 'ls -la'
+          sh 'mvn'
+        }
+      }
+    }
+  }
+}
