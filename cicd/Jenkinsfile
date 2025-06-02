@@ -73,10 +73,10 @@ stage('Build Image') {
           sh 'docker buildx build -t $GIT_COMMIT .'
           sh 'docker image tag $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker image push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
-          sh 'docker image inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > metadata.json'
+          sh 'docker manifest inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > manifest.json'
           sh 'docker image rm $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker logout'
-          archiveArtifacts artifacts: 'metadata.json', fingerprint: true
+          archiveArtifacts artifacts: 'manifest.json', fingerprint: true
         }
       }
     }
