@@ -4,7 +4,7 @@ pipeline {
     APP_NAME = 'spring-petclinic'
   }
   stages {
-    stage('Build') {
+    stage('Test') {
       options {
         timeout(time: 300, unit: 'SECONDS')
       }
@@ -21,9 +21,12 @@ pipeline {
       }
       agent { dockerContainer { image 'shykin/maven:00b2b58a6de794d60956e593e42c832a0ebf5437' } }
       steps {
-        sh 'ls -la'
-        sh 'mvn'
-        sh 'echo $APP_NAME'
+        sh 'mvn -B clean test'
+      }
+      post {
+        always {
+          junit '**/target/surefire-reports/*.xml'
+        }
       }
     }
   }
