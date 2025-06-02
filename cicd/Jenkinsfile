@@ -21,8 +21,7 @@ pipeline {
       }
       agent { dockerContainer { image 'shykin/maven:00b2b58a6de794d60956e593e42c832a0ebf5437' } }
       steps {
-        sh 'mvn -B clean test'
-        sh 'mvn -B package -DskipTests'
+        sh 'mvn -B package'
         stash includes: '**/target/*.jar', name: 'package'
         archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
       }
