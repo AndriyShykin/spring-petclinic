@@ -9,11 +9,13 @@ pipeline {
     IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     AWS_CRED_ID='jenkins-aws'
   }
+  options {
+    preserveStashes()
+  }
   stages {
     stage('Build App') {
       options {
         timeout(time: 600, unit: 'SECONDS')
-        preserveStashes()
       }
       when {
         allOf {
