@@ -1,6 +1,7 @@
 pipeline {
   agent none
   environment {
+    AGENT_IMAGE = 'shykin/alpine:4f5d8d5570d3e29e68d4a5c8e77c532607009f7a'
     DOCKER_HOST_ = 'tcp://172.31.18.232:2375'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = '975049956464'
@@ -26,7 +27,7 @@ pipeline {
       }
       agent {
         dockerContainer {
-          image 'shykin/alpine:4f5d8d5570d3e29e68d4a5c8e77c532607009f7a'
+          image "${AGENT_IMAGE}"
         }
       }
       steps {
@@ -57,7 +58,7 @@ stage('Build Image') {
       }
       agent {
         dockerContainer {
-          image 'shykin/alpine:4f5d8d5570d3e29e68d4a5c8e77c532607009f7a'
+          image "${AGENT_IMAGE}"
         }
       }
       environment {
@@ -69,7 +70,7 @@ stage('Build Image') {
           sh 'cp target/*.jar app.jar'
           sh 'cp cicd/Dockerfile .'
           sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com'
-          sh 'docker buildx build -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker buildx build -t "$IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT" .'
           sh 'docker push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker image rm $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker logout'
