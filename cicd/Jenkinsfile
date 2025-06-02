@@ -2,7 +2,7 @@ pipeline {
   agent none
   environment {
     APP_NAME = 'spring-petclinic'
-    DOCKER_HOST = 'tcp://172.31.18.232:2375'
+    DOCKER_HOST_ = 'tcp://172.31.18.232:2375'
     AWS_ACCOUNT_ID = '975049956464'
     AWS_REGION = 'eu-north-1'
     IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
@@ -11,7 +11,7 @@ pipeline {
   stages {
     stage('Build App') {
       options {
-        timeout(time: 300, unit: 'SECONDS')
+        timeout(time: 600, unit: 'SECONDS')
       }
       when {
         allOf {
@@ -42,7 +42,7 @@ pipeline {
     }
 stage('Build Image') {
       options {
-        timeout(time: 300, unit: 'SECONDS')
+        timeout(time: 600, unit: 'SECONDS')
       }
       when {
         allOf {
@@ -64,6 +64,7 @@ stage('Build Image') {
         withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
           unstash 'package'
           sh 'cp target/*.jar ./app.jar'
+          sh 'export DOCKER_HOST=$DOCKER_HOST_'
           sh 'docker build -f ./cicd/Dockerfile -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'aws sts get-caller-identity'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
