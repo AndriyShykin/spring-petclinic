@@ -54,7 +54,7 @@ stage('Build Image') {
       }
       agent {
         dockerContainer {
-          image 'shykin/aws-docker:b699700818db11edd31ae3b1d9e94061afe528a2'
+          image 'shykin/aws-docker-jre:50a86e59ec85c68785b072c0c2e69cc448b4e602'
         }
       }
       steps {
