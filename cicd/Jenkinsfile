@@ -47,10 +47,7 @@ stage('Build Image') {
           }
         }
       }
-      agent { dockerContainer { image 'gcr.io/kaniko-project/executor:debug' } }
-      environment {
-        PATH = "/busybox:/kaniko:$PATH"
-      }
+      agent { dockerContainer { image 'shykin/kaniko:c2b61b916a6dc7eb8dd2ff25d3ae8111c7a8a741' } }
       steps {
         withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
           unstash 'package'
