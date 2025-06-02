@@ -4,7 +4,7 @@ pipeline {
     AGENT_IMAGE = 'shykin/alpine:4f5d8d5570d3e29e68d4a5c8e77c532607009f7a'
     DOCKER_HOST_ = 'tcp://172.31.18.232:2375'
     APP_NAME = 'spring-petclinic'
-    AWS_ACCOUNT_ID = '975049956464'
+    AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
     IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     AWS_CRED_ID='jenkins-aws'
@@ -70,12 +70,11 @@ stage('Build Image') {
           sh 'cp target/*.jar app.jar'
           sh 'cp cicd/Dockerfile .'
           sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com'
-          sh 'docker buildx build --metadata-file metadata.json --tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker buildx build --tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'docker tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker image rm $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
           sh 'docker logout'
-          archiveArtifacts artifacts: 'metadata.json', fingerprint: true
         }
       }
     }
