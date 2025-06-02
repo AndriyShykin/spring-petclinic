@@ -1,6 +1,7 @@
 pipeline {
   agent none
   environment {
+    DOCKER_HOST_ = 'tcp://172.31.18.232:2375'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = '975049956464'
     AWS_REGION = 'eu-north-1'
@@ -60,14 +61,14 @@ stage('Build Image') {
         }
       }
       environment {
-        DOCKER_HOST = 'tcp://172.31.18.232:2375'
+        DOCKER_HOST = $DOCKER_HOST_
       }
       steps {
         withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
           unstash 'package'
           sh 'cp target/*.jar ./app.jar'
-          sh 'export DOCKER_HOST=$DOCKER_HOST_'
-          sh 'docker buildx build -f ./cicd/Dockerfile -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker buildx build -f ./cicd/Dockerfile -t $APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker image tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'aws sts get-caller-identity'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
         }
