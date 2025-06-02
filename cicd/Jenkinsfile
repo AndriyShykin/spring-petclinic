@@ -53,7 +53,7 @@ stage('Build Image') {
       }
       agent {
         dockerContainer {
-          image 'shykin/kaniko:1f78e5eb751ab027df64fcba182ffe60b8bc4aa2'
+          image 'shykin/kaniko:72704b32618d0277bc69a302480ecae132509b00'
         }
       }
       steps {
