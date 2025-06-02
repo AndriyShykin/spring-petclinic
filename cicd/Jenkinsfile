@@ -3,10 +3,10 @@ pipeline {
   environment {
     APP_NAME = 'spring-petclinic'
     DOCKER_HOST = 'https://172.31.18.232:2375'
-    AWS_CRED_ID='jenkins-aws'
     AWS_ACCOUNT_ID = '975049956464'
     AWS_REGION = 'eu-north-1'
-    URL_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    AWS_CRED_ID='jenkins-aws'
   }
   stages {
     stage('Build App') {
@@ -61,10 +61,10 @@ stage('Build Image') {
         }
       }
       steps {
-        withAWS(region: AWS_REGION, credentials: AWS_CRED_ID) {
+        withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
           unstash 'package'
           sh 'cp target/*.jar ./app.jar'
-          sh 'docker build -f ./cicd/Dockerfile -t $APP_NAME .'
+          sh 'docker build -f ./cicd/Dockerfile -t $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           sh 'aws sts get-caller-identity'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
         }
