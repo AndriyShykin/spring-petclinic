@@ -71,15 +71,17 @@ stage('Build Image') {
       steps {
         withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
           unstash 'package'
-          sh 'cp target/*.jar app.jar'
-          sh 'cp cicd/Dockerfile .'
-          sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com'
-          sh 'docker buildx build -t $GIT_COMMIT .'
-          sh 'docker image tag $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
-          sh 'docker image push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
-          sh 'docker manifest inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > manifest.json'
-          sh 'docker image rm $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
-          sh 'docker logout $IMAGE_REGISTRY'
+          sh '''
+          cp target/*.jar app.jar
+          cp cicd/Dockerfile .
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+          docker buildx build -t $GIT_COMMIT .
+          docker image tag $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
+          docker image push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
+          docker manifest inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > manifest.json
+          docker image rm $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
+          docker logout $IMAGE_REGISTRY
+          '''
           archiveArtifacts artifacts: 'manifest.json', fingerprint: true
         }
       }
