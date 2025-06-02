@@ -19,11 +19,11 @@ pipeline {
           }
         }
       }
-      agent { dockerContainer { image 'maven:3.9.9-eclipse-temurin-24-alpine' } }
+      agent { dockerContainer { image 'shykin/maven:00b2b58a6de794d60956e593e42c832a0ebf5437' } }
       steps {
         sh 'ls -la'
         sh 'mvn'
-
+        sh 'echo $APP_NAME'
       }
     }
   }
