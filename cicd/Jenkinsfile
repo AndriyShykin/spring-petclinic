@@ -2,6 +2,7 @@ pipeline {
   agent none
   environment {
     APP_NAME = 'spring-petclinic'
+    DOCKER_HOST = 'https://172.31.18.232:2375'
     REGISTRY_SECRET_ID = 'dockerhub'
   }
   stages {
@@ -53,7 +54,7 @@ stage('Build Image') {
       }
       agent {
         dockerContainer {
-          image 'shykin/kaniko:c1e4f283909e4fb9d64e95a29699aeaba5d96ccf'
+          image 'shykin/aws-docker:b699700818db11edd31ae3b1d9e94061afe528a2'
         }
       }
       steps {
@@ -61,7 +62,7 @@ stage('Build Image') {
           unstash 'package'
           sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n $REGISTRY_USER:$REGISTRY_PASSWORD | base64)\\\"}}}" > /kaniko/.docker/config.json'
           sh 'cp target/*.jar cicd/app.jar'
-          sh '/kaniko/executor --context cicd --dockerfile cicd/Dockerfile --destination $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:latest --destination $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT --image-name-tag-with-digest-file image.txt'
+          sh 'docker build -t $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
         }
       }
