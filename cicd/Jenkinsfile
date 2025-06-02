@@ -20,7 +20,11 @@ pipeline {
           }
         }
       }
-      agent { dockerContainer { image 'shykin/maven:00b2b58a6de794d60956e593e42c832a0ebf5437' } }
+      agent {
+        dockerContainer {
+          image 'shykin/maven:00b2b58a6de794d60956e593e42c832a0ebf5437'
+        }
+      }
       steps {
         sh 'mvn -B package'
         stash includes: '**/target/*.jar', name: 'package'
@@ -49,8 +53,7 @@ stage('Build Image') {
       }
       agent {
         dockerContainer {
-          image 'gcr.io/kaniko-project/executor:debug'
-          args '--entrypoint=/busybox/sh'
+          image 'shykin/kaniko:1f78e5eb751ab027df64fcba182ffe60b8bc4aa2'
         }
       }
       steps {
