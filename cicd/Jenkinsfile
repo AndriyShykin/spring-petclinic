@@ -3,7 +3,7 @@ pipeline {
   environment {
     APP_NAME = 'spring-petclinic'
     DOCKER_HOST = 'https://172.31.18.232:2375'
-    REGISTRY_SECRET_ID = 'dockerhub'
+    AWS_CRED_ID='jenkins-aws'
   }
   stages {
     stage('Build App') {
@@ -58,11 +58,11 @@ stage('Build Image') {
         }
       }
       steps {
-        withCredentials([usernamePassword(credentialsId: REGISTRY_SECRET_ID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+        withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
           unstash 'package'
-          sh 'echo "{\\\"auths\\\":{\\\"$IMAGE_REGISTRY\\\":{\\\"auth\\\":\\\"$(echo -n $REGISTRY_USER:$REGISTRY_PASSWORD | base64)\\\"}}}" > /kaniko/.docker/config.json'
           sh 'cp target/*.jar ./app.jar'
-          sh 'docker build -f ./cicd/Dockerfile -t $REGISTRY_USER/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
+          sh 'docker build -f ./cicd/Dockerfile -t $APP_NAME .'
+          sh 'aws sts get-caller-identity'
           archiveArtifacts artifacts: 'image.txt', fingerprint: true
         }
       }
