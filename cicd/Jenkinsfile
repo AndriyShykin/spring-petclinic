@@ -68,10 +68,12 @@ stage('Build Image') {
           unstash 'package'
           sh 'cp target/*.jar app.jar'
           sh 'cp cicd/* .'
+          sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com'
           sh 'docker build -t $APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
-          sh 'docker image tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT .'
-          sh 'aws sts get-caller-identity'
-          archiveArtifacts artifacts: 'image.txt', fingerprint: true
+          sh 'docker image tag $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
+          sh 'docker push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
+          sh 'docker image rm $APP_NAME-$BRANCH_NAME:$GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT'
+          sh 'docker logout'
         }
       }
     }
