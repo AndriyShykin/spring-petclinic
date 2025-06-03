@@ -27,7 +27,7 @@ pipeline {
       when {
         allOf {
           expression {
-            env.BRANCH_NAME in ['main']
+            env.BRANCH_NAME in ['main', 'test']
           }
           anyOf {
             changeset "src/main/**"
@@ -63,7 +63,7 @@ pipeline {
       when {
         allOf {
           expression {
-            env.BRANCH_NAME in ['main']
+            env.BRANCH_NAME in ['main', 'test']
           }
           anyOf {
             changeset "src/main/**"
