@@ -149,23 +149,20 @@ pipeline {
                 --set awsRegion="${AWS_REGION}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
                 --set application.imageTag="${GIT_COMMIT}" helm/petclinic"
+              delaySec=4
+              healthCheckPassed=false
+              hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.status.loadBalancer.ingress[0].hostname')
+              port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.spec.ports[0].port')
+              while [ "$healthCheckPassed" != true ]; do
+                if curl --silent --fail "http://${hostname}:${port}/actuator/health" > /dev/null; then
+                  healthCheckPassed=true
+                  echo "Health check passed!"
+                else
+                  echo "Health check failed, retrying in ${delaySec} seconds..."
+                  sleep "$delaySec"
+                fi
+              done
               '''
-              script {
-                delaySec = 4
-                def healthCheckPassed = false
-                hostname=$(kubectl get svc $APP_NAME-$BRANCH_NAME -n $APP_NAME-$BRANCH_NAME -o yaml | yq '.status.loadBalancer.ingress[0].hostname')
-                port=$(kubectl get svc $APP_NAME-$BRANCH_NAME -n $APP_NAME-$BRANCH_NAME -o yaml | yq '.spec.ports[0].port')
-                while (!healthCheckPassed) {
-                  def getStatus = sh(script: "curl --silent --fail http://${hostname}:${port}/actuator/health", returnStatus: true)
-                  if (getStatus == 0) {
-                    healthCheckPassed = true
-                    echo "Health check passed!"
-                  } else {
-                    echo "Health check failed, retrying in ${delaySec} seconds..."
-                    sleep(delaySec)
-                  }
-                }
-              }
             }
           }
         }
