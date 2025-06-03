@@ -111,10 +111,12 @@ pipeline {
         }
       }
       steps {
-        sh '''
-        echo $EKS_CLUSTER_NAME
-        aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
-        '''
+        withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+          sh '''
+          echo $EKS_CLUSTER_NAME
+          aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
+          '''
+        }
       }
     }
   }
