@@ -35,20 +35,22 @@ pipeline {
           }
         }
       }
-      stage {
-        agent {
-          dockerContainer {
-            image "${AGENT_IMAGE}"
+      stages {
+        stage('nested'){
+          agent {
+            dockerContainer {
+              image "${AGENT_IMAGE}"
+            }
           }
-        }
-        steps {
-          sh 'mvn -B package'
-          stash includes: '**/target/*.jar', name: 'package'
-          archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
-        }
-        post {
-          always {
-            junit '**/target/surefire-reports/*.xml'
+          steps {
+            sh 'mvn -B package'
+            stash includes: '**/target/*.jar', name: 'package'
+            archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+          }
+          post {
+            always {
+              junit '**/target/surefire-reports/*.xml'
+            }
           }
         }
       }
