@@ -14,8 +14,9 @@ pipeline {
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
-    string(name: 'EKS_CLUSTER_NAME', defaultValue: 'shykin-eks-jlcJ3JXr')
+    booleanParam(name: 'DEPLOY', defaultValue: false)
     string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
+    string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
   }
   stages {
     stage('Build App') {
@@ -108,6 +109,9 @@ pipeline {
           }
           expression {
             env.BRANCH_NAME in ['main', 'test']
+          }
+          expression {
+            return env.DEPLOY?.toBoolean()
           }
         }
       }
