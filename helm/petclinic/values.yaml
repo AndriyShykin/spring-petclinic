@@ -1,5 +1,5 @@
 applicationName: petclinic
-branch: ""
+branchName: ""
 
 deployment:
   replicas: 1
