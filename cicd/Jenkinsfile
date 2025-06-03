@@ -13,9 +13,10 @@ pipeline {
     preserveStashes()
   }
   parameters {
+    string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
-    string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: '')
+    string(name: 'EKS_CLUSTER_NAME', defaultValue: 'shykin-eks-jlcJ3JXr')
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
   }
   stages {
     stage('Build App') {
