@@ -55,6 +55,9 @@ pipeline {
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
+      input {
+        message "Proceed to deploy?"
+      }
       when {
         allOf {
           expression {
