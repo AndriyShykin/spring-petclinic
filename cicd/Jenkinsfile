@@ -133,6 +133,7 @@ pipeline {
           steps {
             withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
               sh '''
+              set -e
               export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
               $(aws sts assume-role \
               --role-arn $JENKINS_AWS_ROLE \
