@@ -18,11 +18,11 @@ database:
   storage: "1Gi"
 
 config:
-  databaseName: "petclinic"
+  databaseName: "petclinicDb"
   springJpaHibernateDdlAuto: "update"
   springProfilesActive: "MySQL"
 
 secret:
-  mysqlUser: "petclinic"
+  mysqlUser: "petklinik"
   mysqlPassword: "Insecure"
   mysqlRootPassword: "SuperInsecure!"
