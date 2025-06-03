@@ -55,9 +55,6 @@ pipeline {
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
-      input {
-        message "Proceed to deploy?"
-      }
       when {
         allOf {
           expression {
@@ -105,6 +102,9 @@ pipeline {
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
+      input {
+        message "Proceed to deploy?"
+      }
       when {
         allOf {
           expression {
@@ -113,9 +113,6 @@ pipeline {
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
-          }
-          expression {
-            return env.DEPLOY?.toBoolean()
           }
         }
       }
