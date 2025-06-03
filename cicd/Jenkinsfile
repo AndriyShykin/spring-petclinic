@@ -20,6 +20,7 @@ pipeline {
   }
   stages {
     stage('Build App') {
+      agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
@@ -34,19 +35,21 @@ pipeline {
           }
         }
       }
-      agent {
-        dockerContainer {
-          image "${AGENT_IMAGE}"
+      stage {
+        agent {
+          dockerContainer {
+            image "${AGENT_IMAGE}"
+          }
         }
-      }
-      steps {
-        sh 'mvn -B package'
-        stash includes: '**/target/*.jar', name: 'package'
-        archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
-      }
-      post {
-        always {
-          junit '**/target/surefire-reports/*.xml'
+        steps {
+          sh 'mvn -B package'
+          stash includes: '**/target/*.jar', name: 'package'
+          archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+        }
+        post {
+          always {
+            junit '**/target/surefire-reports/*.xml'
+          }
         }
       }
     }
