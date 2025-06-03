@@ -14,9 +14,6 @@ pipeline {
   }
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
-    string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
-    string(name: 'EKS_CLUSTER_NAME', defaultValue: 'shykin-eks-jlcJ3JXr')
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
   }
   stages {
     stage('Build App') {
@@ -53,6 +50,9 @@ pipeline {
     stage('Build Image') {
       options {
         timeout(time: 600, unit: 'SECONDS')
+      }
+      parameters {
+        string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
       }
       when {
         allOf {
@@ -94,6 +94,10 @@ pipeline {
     stage('Deploy') {
       options {
         timeout(time: 600, unit: 'SECONDS')
+      }
+      parameters {
+        string(name: 'EKS_CLUSTER_NAME', defaultValue: 'shykin-eks-jlcJ3JXr')
+        string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
       }
       when {
         allOf {
