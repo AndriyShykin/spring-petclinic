@@ -104,15 +104,22 @@ pipeline {
       }
       when {
         allOf {
-          anyOf {
-            changeset "src/main/**"
-            triggeredBy 'UserIdCause'
-          }
           expression {
             env.BRANCH_NAME in ['main', 'test']
           }
-          expression {
-            return env.DEPLOY?.toBoolean()
+          anyOf {
+            allOf {
+              expression {
+                return env.DEPLOY?.toBoolean()
+              }
+              anyOf {
+                changeset "src/main/**"
+                triggeredBy 'UserIdCause'
+              }
+            }
+            expression {
+              currentBuild.rawBuild.getCauses().any { it.class.simpleName == 'RestartedStageCause' }
+            }
           }
         }
       }
