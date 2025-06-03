@@ -147,7 +147,20 @@ pipeline {
                 --set awsAccountId="${AWS_ACCOUNT_ID}" \
                 --set awsRegion="${AWS_REGION}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
-                --set application.imageTag="${GIT_COMMIT}" helm/petclinic"
+                --set application.imageTag="${GIT_COMMIT}" helm/petclinic
+              delaySec=4
+              healthCheckPassed=0
+              while [ "$healthCheckPassed" -ne 1 ]; do
+                hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq .status.loadBalancer.ingress[0].hostname)
+                port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq .spec.ports[0].port)
+                if curl --silent --fail "http://${hostname}:${port}/actuator/health" > /dev/null 2>&1; then
+                  healthCheckPassed=1
+                  echo "Health check passed!"
+                else
+                  echo "Health check failed, retrying in ${delaySec} seconds..."
+                  sleep "$delaySec"
+                fi
+              done
               '''
             }
           }
