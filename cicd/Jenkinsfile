@@ -19,7 +19,7 @@ pipeline {
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
   }
   stages {
-    stage('Build App') {
+    stage('Check') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
@@ -36,7 +36,7 @@ pipeline {
         }
       }
       stages {
-        stage('nested'){
+        stage('Build App'){
           agent {
             dockerContainer {
               image "${AGENT_IMAGE}"
@@ -55,7 +55,7 @@ pipeline {
         }
       }
     }
-    stage('Build Image') {
+    stage('Check') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
@@ -72,7 +72,7 @@ pipeline {
         }
       }
       stages {
-        stage('nested'){
+        stage('Build Image'){
           agent {
             dockerContainer {
               image "${AGENT_IMAGE}"
@@ -107,7 +107,7 @@ pipeline {
         }
       }
     }
-    stage('Deploy') {
+    stage('Check') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
@@ -124,7 +124,7 @@ pipeline {
         }
       }
       stages {
-        stage('nested'){
+        stage('Deploy'){
           agent {
             dockerContainer {
               image "${AGENT_IMAGE}"
@@ -139,14 +139,10 @@ pipeline {
               --role-session-name JenkinsDeploy \
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
-              aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${EKS_CLUSTER_REGION}
-              helm upgrade \
-                --create-namespace \
-                --namespace ${APP_NAME}-${BRANCH_NAME} \
-                --install ${APP_NAME}-${BRANCH_NAME} \
-                --set branchName="${BRANCH_NAME}" \
-                --set awsAccountId="${AWS_ACCOUNT_ID}" \
-                --set awsRegion="${AWS_REGION}" \
+              aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
+              #helm upgrade --create-namespace --namespace "${APP_NAME}-${BRANCH_NAME}" \
+                --install "${APP_NAME}-${BRANCH_NAME}" --set branchName="${BRANCH_NAME}" \
+                --set awsAccountId="${AWS_ACCOUNT_ID}" --set awsRegion="${AWS_REGION}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
                 --set application.imageTag="${GIT_COMMIT}" helm/petclinic"
               delaySec=4
