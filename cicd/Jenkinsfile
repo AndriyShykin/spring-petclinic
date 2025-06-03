@@ -19,7 +19,7 @@ pipeline {
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
   }
   stages {
-    stage('Check') {
+    stage('Check 1') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
@@ -55,7 +55,7 @@ pipeline {
         }
       }
     }
-    stage('Check') {
+    stage('Check 2') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
@@ -107,7 +107,7 @@ pipeline {
         }
       }
     }
-    stage('Check') {
+    stage('Check 3') {
       agent none
       options {
         timeout(time: 600, unit: 'SECONDS')
