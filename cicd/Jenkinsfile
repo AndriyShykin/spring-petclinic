@@ -1,7 +1,7 @@
 pipeline {
   agent none
   environment {
-    AGENT_IMAGE = 'shykin/alpine:d1a05482c9cd4403cfa693719c3c57a77113cfcb'
+    AGENT_IMAGE = 'shykin/alpine:784426e57ac29a553b7f72717dd7bff9becbaae9'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
@@ -139,9 +139,33 @@ pipeline {
               --role-session-name JenkinsDeploy \
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
-              aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
-              helm upgrade --install --namespace petclinic-$BRANCH_NAME --create-namespace petclinic-$BRANCH_NAME helm/petclinic --set branchName=$BRANCH_NAME
+              aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${EKS_CLUSTER_REGION}
+              helm upgrade \
+                --create-namespace \
+                --namespace ${APP_NAME}-${BRANCH_NAME} \
+                --install ${APP_NAME}-${BRANCH_NAME} \
+                --set branchName="${BRANCH_NAME}" \
+                --set awsAccountId="${AWS_ACCOUNT_ID}" \
+                --set awsRegion="${AWS_REGION}" \
+                --set application.image="${APP_NAME}-${BRANCH_NAME}" \
+                --set application.imageTag="${GIT_COMMIT}" helm/petclinic"
               '''
+              script {
+                delaySec = 4
+                def healthCheckPassed = false
+                hostname=$(kubectl get svc $APP_NAME-$BRANCH_NAME -n $APP_NAME-$BRANCH_NAME -o yaml | yq '.status.loadBalancer.ingress[0].hostname')
+                port=$(kubectl get svc $APP_NAME-$BRANCH_NAME -n $APP_NAME-$BRANCH_NAME -o yaml | yq '.spec.ports[0].port')
+                while (!healthCheckPassed) {
+                  def getStatus = sh(script: "curl --silent --fail http://${hostname}:${port}/actuator/health", returnStatus: true)
+                  if (getStatus == 0) {
+                    healthCheckPassed = true
+                    echo "Health check passed!"
+                  } else {
+                    echo "Health check failed, retrying in ${delaySec} seconds..."
+                    sleep(delaySec)
+                  }
+                }
+              }
             }
           }
         }

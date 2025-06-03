@@ -6,6 +6,6 @@ spec:
   selector:
     app: {{ .Values.applicationName }}-{{ .Values.branchName }}
   ports:
-    - port: {{ .Values.service.exposePort }}
-      targetPort: {{ .Values.deployment.containerPort }}
+    - port: {{ .Values.application.exposePort }}
+      targetPort: {{ .Values.application.containerPort }}
   type: LoadBalancer

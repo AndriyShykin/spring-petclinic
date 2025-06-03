@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+spec:
+  serviceName: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+          image: {{ .Values.database.image }}:{{ .Values.database.imageTag }}
+          ports:
+            - containerPort: {{ .Values.database.containerPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+            - secretRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+          volumeMounts:
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.database.storage }}

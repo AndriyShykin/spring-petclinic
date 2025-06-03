@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: {{ .Values.applicationName }}-{{ .Values.branchName }}
 spec:
-  replicas: {{ .Values.deployment.replicas }}
+  replicas: {{ .Values.application.replicas }}
   selector:
     matchLabels:
       app: {{ .Values.applicationName }}-{{ .Values.branchName }}
@@ -15,6 +15,12 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: {{ .Values.applicationName }}-{{ .Values.branchName }}
-          image: nginx:alpine
+          image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" .Values.awsAccountId .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
           ports:
-            - containerPort: {{ .Values.deployment.containerPort }}
+            - containerPort: {{ .Values.application.containerPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+            - secretRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}

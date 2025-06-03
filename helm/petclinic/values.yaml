@@ -1,10 +1,28 @@
-applicationName: petclinic
+applicationName: "spring-petclinic"
 branchName: ""
+awsAccountId: ""
+awsRegion: ""
 
-deployment:
+application:
   replicas: 1
-  containerPort: 80
-
-service:
+  image: ""
+  imageTag: ""
+  containerPort: 8080
   exposePort: 8080
 
+database:
+  replicas: 1
+  image: "mysql"
+  imageTag: "9.3"
+  containerPort: 3306
+  storage: "1Gi"
+
+config:
+  databaseName: "petclinic"
+  springJpaHibernateDdlAuto: "update"
+  springProfilesActive: "MySQL"
+
+secret:
+  mysqlUser: "petclinic"
+  mysqlPassword: "Insecure"
+  mysqlRootPassword: "SuperInsecure!"
