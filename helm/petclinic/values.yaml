@@ -1,0 +1,10 @@
+applicationName: petclinic
+branch: """
+
+deployment:
+  replicas: 1
+  containerPort: 80
+
+service:
+  exposePort: 8080
+
