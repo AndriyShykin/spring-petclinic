@@ -2,7 +2,6 @@ pipeline {
   agent none
   environment {
     AGENT_IMAGE = 'shykin/alpine:d1a05482c9cd4403cfa693719c3c57a77113cfcb'
-    DOCKER_HOST_ = 'tcp://172.31.18.232:2375'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
@@ -14,6 +13,7 @@ pipeline {
     preserveStashes()
   }
   parameters {
+    string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
     string(name: 'EKS_CLUSTER_REGION', defaultValue: '')
   }
