@@ -13,6 +13,10 @@ pipeline {
     disableConcurrentBuilds()
     preserveStashes()
   }
+  parameters {
+    string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: '')
+  }
   stages {
     stage('Build App') {
       options {
@@ -45,7 +49,7 @@ pipeline {
         }
       }
     }
-stage('Build Image') {
+    stage('Build Image') {
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
@@ -84,6 +88,33 @@ stage('Build Image') {
           '''
           archiveArtifacts artifacts: 'manifest.json', fingerprint: true
         }
+      }
+    }
+    stage('Deploy') {
+      options {
+        timeout(time: 600, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
+        }
+      }
+      agent {
+        dockerContainer {
+          image "${AGENT_IMAGE}"
+        }
+      }
+      steps {
+        sh '''
+        echo $EKS_CLUSTER_NAME
+        aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
+        '''
       }
     }
   }
