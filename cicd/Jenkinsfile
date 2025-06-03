@@ -15,7 +15,6 @@ pipeline {
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
-    booleanParam(name: 'DEPLOY', defaultValue: false)
     string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
   }
@@ -27,7 +26,7 @@ pipeline {
       when {
         allOf {
           expression {
-            env.BRANCH_NAME in ['main', 'test']
+            env.BRANCH_NAME in ['main']
           }
           anyOf {
             changeset "src/main/**"
@@ -58,7 +57,7 @@ pipeline {
       when {
         allOf {
           expression {
-            env.BRANCH_NAME in ['main', 'test']
+            env.BRANCH_NAME in ['main']
           }
           anyOf {
             changeset "src/main/**"
@@ -102,9 +101,6 @@ pipeline {
       options {
         timeout(time: 600, unit: 'SECONDS')
       }
-      input {
-        message "Proceed to deploy?"
-      }
       when {
         allOf {
           expression {
@@ -131,8 +127,7 @@ pipeline {
           --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
           --output text))
           aws eks update-kubeconfig --name $EKS_CLUSTER_NAME --region $EKS_CLUSTER_REGION
-          kubectl get nodes
-          echo test
+          helm upgrade --install --create-namespace petclinic-$BRANCH_NAME helm/petclinic
           '''
         }
       }
