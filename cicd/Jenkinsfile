@@ -151,8 +151,8 @@ pipeline {
                 --set application.imageTag="${GIT_COMMIT}" helm/petclinic"
               delaySec=4
               healthCheckPassed=false
-              hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.status.loadBalancer.ingress[0].hostname')
-              port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.spec.ports[0].port')
+              hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq .status.loadBalancer.ingress[0].hostname)
+              port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq .spec.ports[0].port)
               while [ "$healthCheckPassed" != true ]; do
                 if curl --silent --fail "http://${hostname}:${port}/actuator/health" > /dev/null; then
                   healthCheckPassed=true
