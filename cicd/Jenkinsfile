@@ -26,12 +26,12 @@ pipeline {
       }
       when {
         allOf {
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
-          }
-          expression {
-            env.BRANCH_NAME in ['main', 'test']
           }
         }
       }
@@ -57,12 +57,12 @@ pipeline {
       }
       when {
         allOf {
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
-          }
-          expression {
-            env.BRANCH_NAME in ['main', 'test']
           }
         }
       }
@@ -108,18 +108,11 @@ pipeline {
             env.BRANCH_NAME in ['main', 'test']
           }
           anyOf {
-            allOf {
-              expression {
-                return env.DEPLOY?.toBoolean()
-              }
-              anyOf {
-                changeset "src/main/**"
-                triggeredBy 'UserIdCause'
-              }
-            }
-            expression {
-              currentBuild.rawBuild.getCauses().any { it.class.simpleName == 'RestartedStageCause' }
-            }
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+          expression {
+            return env.DEPLOY?.toBoolean()
           }
         }
       }
