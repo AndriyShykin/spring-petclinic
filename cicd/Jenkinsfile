@@ -6,7 +6,6 @@ pipeline {
     AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
     IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    AWS_CRED_ID='jenkins-aws'
   }
   options {
     disableConcurrentBuilds()
