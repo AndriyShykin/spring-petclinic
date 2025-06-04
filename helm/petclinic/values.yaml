@@ -19,7 +19,7 @@ database:
   storageClass: "gp3"
 
 config:
-  databaseName: "petclinicDB"
+  databaseName: "petclinic"
   springJpaHibernateDdlAuto: "update"
   springProfilesActive: "MySQL"
 
