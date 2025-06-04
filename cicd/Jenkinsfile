@@ -1,7 +1,7 @@
 pipeline {
   agent none
   environment {
-    AGENT_IMAGE = 'shykin/alpine:784426e57ac29a553b7f72717dd7bff9becbaae9'
+    AGENT_IMAGE = 'shykin/alpine:c9bf89728ff6e4b14b1aad1986ca27650facb2d3'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
