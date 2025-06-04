@@ -169,14 +169,12 @@ pipeline {
     }
   }
   post {
-    always {
+    unsuccessful {
       script {
         if (env.BRANCH_NAME in ['main', 'test']) {
-          if (currentBuild.currentResult == 'FAILURE' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
-            mail to: "${env.EMAIL_RECIPIENT}",
-                subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
-                body: """Console output: ${env.BUILD_URL}"""
-          }
+          mail to: "${env.EMAIL_RECIPIENT}",
+              subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+              body: """Console output: ${env.BUILD_URL}"""
         }
       }
     }
