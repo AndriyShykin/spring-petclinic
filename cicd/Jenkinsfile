@@ -36,7 +36,7 @@ pipeline {
         }
       }
       stages {
-        stage('BuildApp'){
+        stage('Build App'){
           agent {
             dockerContainer {
               image "${AGENT_IMAGE}"
@@ -72,7 +72,7 @@ pipeline {
         }
       }
       stages {
-        stage('BuildImage'){
+        stage('Build Image'){
           agent {
             dockerContainer {
               image "${AGENT_IMAGE}"
