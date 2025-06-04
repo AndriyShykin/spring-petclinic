@@ -25,9 +25,35 @@ spec:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
             - secretRef:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
               mountPath: /var/lib/mysql
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
+              mountPath: /etc/mysql/conf.d/30-data.sql
+              subPath: 30-data.sql
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
+              mountPath: /etc/mysql/conf.d/20-schema.sql
+              subPath: 20-schema.sql
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
+              mountPath: /etc/mysql/conf.d/10-user.sql
+              subPath: 10-user.sql
+      volumes:
+        - configMap:
+            name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
+        - configMap:
+            name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
+        - configMap:
+            name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
+
   volumeClaimTemplates:
     - metadata:
         name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
