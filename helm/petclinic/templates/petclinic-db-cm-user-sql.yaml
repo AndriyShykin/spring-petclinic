@@ -10,8 +10,8 @@ data:
     DEFAULT CHARACTER SET utf8
     DEFAULT COLLATE utf8_general_ci;
 
-    CREATE USER IF NOT EXISTS 'petclinic'@'%' IDENTIFIED BY 'Insecure';
+    CREATE USER IF NOT EXISTS '{{ .Values.secret.mysqlUser }}'@'%' IDENTIFIED BY '{{ .Values.secret.mysqlPassword }}';
 
-    GRANT ALL PRIVILEGES ON petclinic.* TO 'petclinic'@'%';
+    GRANT ALL PRIVILEGES ON {{ .Values.config.databaseName }}.* TO '{{ .Values.secret.mysqlUser }}'@'%';
 
     FLUSH PRIVILEGES;
