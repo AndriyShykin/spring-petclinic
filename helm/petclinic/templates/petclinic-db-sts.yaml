@@ -15,8 +15,8 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
-          image: {{ .Values.database.image }}:{{ .Values.database.imageTag }}
+        - image: {{ .Values.database.image }}:{{ .Values.database.imageTag }}
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
           ports:
             - containerPort: {{ .Values.database.containerPort }}
               protocol: TCP
@@ -25,6 +25,10 @@ spec:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
             - secretRef:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "while ! mysql -u root -p{{ .Values.secret.mysqlRootPassword }} < /etc/mysql/conf.d/10-init.sql; do sleep 4; done"]
           readinessProbe:
             tcpSocket:
               port: 3306

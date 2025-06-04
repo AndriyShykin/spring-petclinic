@@ -14,8 +14,8 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: {{ .Values.applicationName }}-{{ .Values.branchName }}
-          image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" (toString .Values.awsAccountId) .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
+        - image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" (toString .Values.awsAccountId) .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}
           ports:
             - containerPort: {{ .Values.application.containerPort }}
               protocol: TCP
