@@ -32,34 +32,31 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
           volumeMounts:
-            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
+            - name: mysql-data
               mountPath: /var/lib/mysql
-            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
-              mountPath: /etc/mysql/conf.d/30-data.sql
-              subPath: 30-data.sql
-            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
-              mountPath: /etc/mysql/conf.d/20-schema.sql
-              subPath: 20-schema.sql
+              readOnly: false
             - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
               mountPath: /etc/mysql/conf.d/10-user.sql
+              readOnly: true
               subPath: 10-user.sql
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
+              mountPath: /etc/mysql/conf.d/20-schema.sql
+              readOnly: true
+              subPath: 20-schema.sql
+            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
+              mountPath: /etc/mysql/conf.d/30-data.sql
+              readOnly: true
+              subPath: 30-data.sql
       volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
         - configMap:
             name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
           name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-user-sql
         - configMap:
-            name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
-          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
-        - configMap:
             name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
           name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-schema-sql
-
-  volumeClaimTemplates:
-    - metadata:
-        name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: {{ .Values.database.storage }}
+        - configMap:
+            name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-data-sql
