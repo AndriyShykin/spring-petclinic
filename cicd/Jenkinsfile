@@ -150,15 +150,16 @@ pipeline {
                 --set application.imageTag="${GIT_COMMIT}" helm/petclinic
               delaySec=4
               healthCheckPassed=0
-              while [ "$healthCheckPassed" -ne 1 ]; do
-                hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.status.loadBalancer.ingress[0].hostname')
-                port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o yaml | yq '.spec.ports[0].port')
-                code=$(curl -w "%{http_code}" "http://${hostname}:${port}/actuator/health")
-                if [ "$code" = "200" ]; then
+              while [ "${healthCheckPassed}" -ne 1 ]; do
+                hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+                port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.spec.ports[0].port')
+                response=$(curl -s "http://${hostname}:${port}/actuator/health")
+                status=$(echo "${response}" | jq -r '.status')
+                if [ "${status}" = "UP" ]; then
                   healthCheckPassed=1
-                  echo "Health check passed!"
+                  echo "Service status is 'UP'"
                 else
-                  sleep "$delaySec"
+                  sleep "${delaySec}"
                 fi
               done
               '''
