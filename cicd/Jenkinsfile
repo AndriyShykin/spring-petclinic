@@ -157,13 +157,25 @@ pipeline {
                 status=$(echo "${response}" | jq -r '.status')
                 if [ "${status}" = "UP" ]; then
                   healthCheckPassed=1
-                  echo "Service is 'UP'"
                 else
                   sleep "${delaySec}"
                 fi
               done
               '''
             }
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        if (env.BRANCH_NAME in ['main', 'test']) {
+          if (currentBuild.currentResult == 'FAILURE' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
+            mail to: "${env.EMAIL_RECIPIENT}",
+                subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+                body: """Console output: ${env.BUILD_URL}"""
           }
         }
       }
