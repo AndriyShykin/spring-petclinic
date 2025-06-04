@@ -89,17 +89,17 @@ pipeline {
               cp cicd/Dockerfile .
               export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
               $(aws sts assume-role \
-              --role-arn $JENKINS_AWS_ROLE \
-              --role-session-name JenkinsBuildImage \
+              --role-arn "${JENKINS_AWS_ROLE}" \
+              --role-session-name "${STAGE_NAME}" \
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
-              aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-              docker buildx build -t $GIT_COMMIT .
-              docker image tag $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
-              docker image push $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
-              docker manifest inspect $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT > manifest.json
-              docker image rm $GIT_COMMIT $IMAGE_REGISTRY/$APP_NAME-$BRANCH_NAME:$GIT_COMMIT
-              docker logout $IMAGE_REGISTRY
+              aws ecr get-login-password --region "${$AWS_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+              docker buildx build -t "${GIT_COMMIT}" .
+              docker image tag "${GIT_COMMIT}" "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker image push "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker manifest inspect "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}" > manifest.json
+              docker image rm "${GIT_COMMIT}" "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker logout "${IMAGE_REGISTRY}"
               '''
               archiveArtifacts artifacts: 'manifest.json', fingerprint: true
             }
@@ -135,8 +135,8 @@ pipeline {
               sh '''
               export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
               $(aws sts assume-role \
-              --role-arn $JENKINS_AWS_ROLE \
-              --role-session-name JenkinsDeploy \
+              --role-arn "${JENKINS_AWS_ROLE}" \
+              --role-session-name "${STAGE_NAME}" \
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
               aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
@@ -157,7 +157,7 @@ pipeline {
                 status=$(echo "${response}" | jq -r '.status')
                 if [ "${status}" = "UP" ]; then
                   healthCheckPassed=1
-                  echo "Service status is 'UP'"
+                  echo "Service is 'UP'"
                 else
                   sleep "${delaySec}"
                 fi
