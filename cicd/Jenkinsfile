@@ -153,7 +153,7 @@ pipeline {
               while [ "${healthCheckPassed}" -ne 1 ]; do
                 hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
                 port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.spec.ports[0].port')
-                response=$(curl -s "http://${hostname}:${port}/actuator/health")
+                response=$(curl -s "http://${hostname}:${port}/actuator/health") || true
                 status=$(echo "${response}" | jq -r '.status')
                 if [ "${status}" = "UP" ]; then
                   healthCheckPassed=1
