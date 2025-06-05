@@ -16,7 +16,7 @@ database:
   imageTag: "9.3"
   containerPort: 3306
   storage: "1Gi"
-  storageClass: "gp3"
+  storageClass: "gp2"
 
 config:
   databaseName: "petclinic"
