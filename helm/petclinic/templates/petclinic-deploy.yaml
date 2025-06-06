@@ -25,9 +25,7 @@ spec:
             - containerPort: {{ .Values.application.containerPort }}
               protocol: TCP
       initContainers:
-        - name: init
-          image: busybox:1.37
-          command:
+        - command:
             - sh
             - -c
             - |
@@ -42,3 +40,5 @@ spec:
                 i=$((i+1))
                 sleep 4
               done
+          image: busybox:1.37
+          name: init
