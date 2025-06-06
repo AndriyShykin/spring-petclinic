@@ -31,7 +31,14 @@ spec:
             - sh
             - -c
             - |
-              until nc -z {{ .Values.applicationName }}-{{ .Values.branchName }}-db {{ .Values.database.containerPort }}; do
+              i=0
+              max_iterations=15
+              while ! nc -z {{ .Values.applicationName }}-{{ .Values.branchName }}-db {{ .Values.database.containerPort }}; do
+                if [ $i -ge $max_iterations ]; then
+                  echo "Timeout waiting for database. Exiting now..."
+                  exit 1
+                fi
                 echo "Waiting for database at {{ .Values.applicationName }}-{{ .Values.branchName }}-db:{{ .Values.database.containerPort }}..."
+                i=$((i+1))
                 sleep 4
               done
