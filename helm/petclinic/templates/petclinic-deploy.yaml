@@ -24,3 +24,14 @@ spec:
           ports:
             - containerPort: {{ .Values.application.containerPort }}
               protocol: TCP
+      initContainers:
+        - name: init
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ .Values.applicationName }}-{{ .Values.branchName }}-db {{ .Values.database.containerPort }}; do
+                echo "Waiting for database at {{ .Values.applicationName }}-{{ .Values.branchName }}-db:{{ .Values.database.containerPort }}..."
+                sleep 4
+              done
