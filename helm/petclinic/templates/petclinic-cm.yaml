@@ -4,6 +4,7 @@ metadata:
   name: {{ .Values.applicationName }}-{{ .Values.branchName }}
 data:
   MYSQL_DATABASE: {{ .Values.config.databaseName }}
+  MYSQL_TCP_PORT: {{ .Values.database.containerPort | quote }}
   SPRING_DATASOURCE_URL: {{ (print "jdbc:mysql://" .Values.applicationName "-" .Values.branchName "-db:" .Values.database.containerPort "/" .Values.config.databaseName "?useUnicode=true") | quote }}
   SPRING_JPA_HIBERNATE_DDL_AUTO: {{ .Values.config.springJpaDdlHibernateAuto }}
   SPRING_PROFILES_ACTIVE: {{ .Values.config.springProfilesActive }}

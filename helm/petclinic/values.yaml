@@ -14,7 +14,7 @@ database:
   replicas: 1
   image: "mysql"
   imageTag: "9.3"
-  containerPort: 3306
+  containerPort: 3307
   storage: "1Gi"
   storageClass: "gp2"
 
