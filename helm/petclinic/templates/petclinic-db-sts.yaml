@@ -31,16 +31,13 @@ spec:
               protocol: TCP
           readinessProbe:
             tcpSocket:
-              port: 3306
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 3
+              port: {{ .Values.database.containerPort }}
           volumeMounts:
-            - name: mysql-data
-              mountPath: /var/lib/mysql
+            - mountPath: /var/lib/mysql
+              name: mysql-data
               readOnly: false
-            - name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-init-sql
-              mountPath: /etc/mysql/conf.d/10-init.sql
+            - mountPath: /etc/mysql/conf.d/10-init.sql
+              name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-init-sql
               readOnly: true
               subPath: 10-init.sql
       volumes:
