@@ -15,7 +15,10 @@ pipeline {
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
+    booleanParam(name: 'BUILD_APP', defaultValue: true)
+    booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
+    booleanParam(name: 'DEPLOY', defaultValue: false)
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')a
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
   }
   stages {
@@ -26,9 +29,8 @@ pipeline {
       }
       when {
         allOf {
-          expression {
-            env.BRANCH_NAME in ['main', 'test']
-          }
+          expression { env.BRANCH_NAME in ['main', 'test'] }
+          expression { return params.BUILD_APP }
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
@@ -62,9 +64,8 @@ pipeline {
       }
       when {
         allOf {
-          expression {
-            env.BRANCH_NAME in ['main', 'test']
-          }
+          expression { env.BRANCH_NAME in ['main', 'test'] }
+          expression { return params.BUILD_IMAGE }
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
@@ -114,9 +115,8 @@ pipeline {
       }
       when {
         allOf {
-          expression {
-            env.BRANCH_NAME in ['main', 'test']
-          }
+          expression { env.BRANCH_NAME in ['main', 'test'] }
+          expression { return params.DEPLOY }
           anyOf {
             changeset "src/main/**"
             triggeredBy 'UserIdCause'
