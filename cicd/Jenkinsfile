@@ -14,9 +14,9 @@ pipeline {
   }
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
-    string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'BUILD_APP', defaultValue: true)
     booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
+    string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'DEPLOY', defaultValue: false)
     string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
