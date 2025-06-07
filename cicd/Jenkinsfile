@@ -151,13 +151,16 @@ pipeline {
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
                 --set application.imageTag="${IMAGE_TAG}" helm/petclinic
               delaySec=4
+              timeoutSec=2
               healthCheckPassed=0
               while [ "${healthCheckPassed}" -ne 1 ]; do
+                kubectl rollout status deploy "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" --timeout="${timeoutSec}s"
+                rollout_code=$?
                 hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
                 port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.spec.ports[0].port')
                 response=$(curl "http://${hostname}:${port}/actuator/health") || true
                 status=$(echo "${response}" | jq -r '.status')
-                if [ "${status}" = "UP" ]; then
+                if [ "${rollout_code}" -eq 0 ] && [ "${status}" = "UP" ]; then
                   healthCheckPassed=1
                 else
                   sleep "${delaySec}"
