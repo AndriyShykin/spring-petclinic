@@ -20,7 +20,7 @@ pipeline {
     booleanParam(name: 'DEPLOY', defaultValue: false)
     string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
-    string(name: 'IMAGE_TAG', defaultValue: '')
+    string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value ($GIT_COMMIT) if left empty.')
   }
   stages {
     stage('Check 1') {
