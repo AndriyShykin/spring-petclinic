@@ -18,16 +18,14 @@ pipeline {
     booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'DEPLOY', defaultValue: false)
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: env.AWS_REGION)
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value if left empty.')
   }
   stages {
-    stage('Check 1') {
+    stage('1') {
       agent none
-      options {
-        timeout(time: 600, unit: 'SECONDS')
-      }
+      options { timeout(time: 600, unit: 'SECONDS') }
       when {
         allOf {
           expression { env.BRANCH_NAME in ['main', 'test'] }
@@ -40,29 +38,19 @@ pipeline {
       }
       stages {
         stage('Build App'){
-          agent {
-            dockerContainer {
-              image "${AGENT_IMAGE}"
-            }
-          }
+          agent { dockerContainer { image "${AGENT_IMAGE}" } }
           steps {
             sh 'mvn -B package'
             stash includes: '**/target/*.jar', name: 'package'
             archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
           }
-          post {
-            always {
-              junit '**/target/surefire-reports/*.xml'
-            }
-          }
+          post { always { junit '**/target/surefire-reports/*.xml' } }
         }
       }
     }
-    stage('Check 2') {
+    stage('2') {
       agent none
-      options {
-        timeout(time: 600, unit: 'SECONDS')
-      }
+      options { timeout(time: 600, unit: 'SECONDS') }
       when {
         allOf {
           expression { env.BRANCH_NAME in ['main', 'test'] }
@@ -75,14 +63,8 @@ pipeline {
       }
       stages {
         stage('Build Image'){
-          agent {
-            dockerContainer {
-              image "${AGENT_IMAGE}"
-            }
-          }
-          environment {
-            DOCKER_HOST = "${DOCKER_HOST_}"
-          }
+          agent { dockerContainer { image "${AGENT_IMAGE}" } }
+          environment { DOCKER_HOST = "${DOCKER_HOST_}" }
           steps {
             withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
               unstash 'package'
@@ -109,11 +91,9 @@ pipeline {
         }
       }
     }
-    stage('Check 3') {
+    stage('3') {
       agent none
-      options {
-        timeout(time: 600, unit: 'SECONDS')
-      }
+      options { timeout(time: 600, unit: 'SECONDS') }
       when {
         allOf {
           expression { env.BRANCH_NAME in ['main', 'test'] }
@@ -126,11 +106,7 @@ pipeline {
       }
       stages {
         stage('Deploy'){
-          agent {
-            dockerContainer {
-              image "${AGENT_IMAGE}"
-            }
-          }
+          agent { dockerContainer { image "${AGENT_IMAGE}" } }
           steps {
             withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
               sh '''
