@@ -1,0 +1,182 @@
+pipeline {
+  agent none
+  environment {
+    AGENT_IMAGE = 'shykin/alpine:c9bf89728ff6e4b14b1aad1986ca27650facb2d3'
+    APP_NAME = 'spring-petclinic'
+    AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
+    AWS_REGION = 'eu-north-1'
+    IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    JENKINS_AWS_ROLE = 'arn:aws:iam::975049956464:role/JenkinsAssumeRole'
+  }
+  options {
+    disableConcurrentBuilds()
+    preserveStashes()
+  }
+  parameters {
+    string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
+    string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
+    string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
+  }
+  stages {
+    stage('Check 1') {
+      agent none
+      options {
+        timeout(time: 600, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+        }
+      }
+      stages {
+        stage('Build App'){
+          agent {
+            dockerContainer {
+              image "${AGENT_IMAGE}"
+            }
+          }
+          steps {
+            sh 'mvn -B package'
+            stash includes: '**/target/*.jar', name: 'package'
+            archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+          }
+          post {
+            always {
+              junit '**/target/surefire-reports/*.xml'
+            }
+          }
+        }
+      }
+    }
+    stage('Check 2') {
+      agent none
+      options {
+        timeout(time: 600, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+        }
+      }
+      stages {
+        stage('Build Image'){
+          agent {
+            dockerContainer {
+              image "${AGENT_IMAGE}"
+            }
+          }
+          environment {
+            DOCKER_HOST = "${DOCKER_HOST_}"
+          }
+          steps {
+            withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+              unstash 'package'
+              sh '''
+              cp target/*.jar app.jar
+              cp cicd/Dockerfile .
+              export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+              $(aws sts assume-role \
+              --role-arn "${JENKINS_AWS_ROLE}" \
+              --role-session-name "${BUILD_TAG}" \
+              --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+              --output text))
+              aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+              docker buildx build -t "${GIT_COMMIT}" .
+              docker image tag "${GIT_COMMIT}" "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker image push "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker manifest inspect "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}" > manifest.json
+              docker image rm "${GIT_COMMIT}" "${IMAGE_REGISTRY}/${APP_NAME}-${BRANCH_NAME}:${GIT_COMMIT}"
+              docker logout "${IMAGE_REGISTRY}"
+              '''
+              archiveArtifacts artifacts: 'manifest.json', fingerprint: true
+            }
+          }
+        }
+      }
+    }
+    stage('Check 3') {
+      agent none
+      options {
+        timeout(time: 600, unit: 'SECONDS')
+      }
+      when {
+        allOf {
+          expression {
+            env.BRANCH_NAME in ['main', 'test']
+          }
+          anyOf {
+            changeset "src/main/**"
+            triggeredBy 'UserIdCause'
+          }
+        }
+      }
+      stages {
+        stage('Deploy'){
+          agent {
+            dockerContainer {
+              image "${AGENT_IMAGE}"
+            }
+          }
+          steps {
+            withCredentials([usernamePassword(credentialsId: AWS_CRED_ID, usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+              sh '''
+              export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+              $(aws sts assume-role \
+              --role-arn "${JENKINS_AWS_ROLE}" \
+              --role-session-name "${BUILD_TAG}" \
+              --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+              --output text))
+              aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
+              helm upgrade --create-namespace \
+                --install "${APP_NAME}-${BRANCH_NAME}" \
+                --namespace "${APP_NAME}-${BRANCH_NAME}" \
+                --set branchName="${BRANCH_NAME}" \
+                --set awsAccountId="${AWS_ACCOUNT_ID}" \
+                --set awsRegion="${AWS_REGION}" \
+                --set application.image="${APP_NAME}-${BRANCH_NAME}" \
+                --set application.imageTag="${GIT_COMMIT}" helm/petclinic
+              delaySec=4
+              healthCheckPassed=0
+              while [ "${healthCheckPassed}" -ne 1 ]; do
+                hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
+                port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.spec.ports[0].port')
+                response=$(curl "http://${hostname}:${port}/actuator/health") || true
+                status=$(echo "${response}" | jq -r '.status')
+                if [ "${status}" = "UP" ]; then
+                  healthCheckPassed=1
+                else
+                  sleep "${delaySec}"
+                fi
+              done
+              '''
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    unsuccessful {
+      script {
+        if (env.BRANCH_NAME in ['main', 'test']) {
+          mail to: "${env.EMAIL_RECIPIENT}",
+              subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+              body: """Console output: ${env.BUILD_URL}"""
+        }
+      }
+    }
+  }
+}

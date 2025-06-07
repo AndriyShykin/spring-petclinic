@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+spec:
+  replicas: {{ .Values.application.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.applicationName }}-{{ .Values.branchName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.applicationName }}-{{ .Values.branchName }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+            - secretRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+          image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" (toString .Values.awsAccountId) .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
+          name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+          ports:
+            - containerPort: {{ .Values.application.containerPort }}
+              protocol: TCP
+      initContainers:
+        - command:
+            - sh
+            - -c
+            - |
+              i=0
+              max_iterations=15
+              while ! nc -z {{ .Values.applicationName }}-{{ .Values.branchName }}-db {{ .Values.database.containerPort }}; do
+                if [ $i -ge $max_iterations ]; then
+                  echo "Timeout waiting for database. Exiting now..."
+                  exit 1
+                fi
+                echo "Waiting for database at {{ .Values.applicationName }}-{{ .Values.branchName }}-db:{{ .Values.database.containerPort }}..."
+                i=$((i+1))
+                sleep 4
+              done
+          image: busybox:1.37
+          name: init
