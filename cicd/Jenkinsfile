@@ -18,7 +18,7 @@ pipeline {
     booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'DEPLOY', defaultValue: false)
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: env.AWS_REGION)
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value if left empty.')
   }
@@ -174,13 +174,9 @@ pipeline {
   }
   post {
     unsuccessful {
-      script {
-        if (env.BRANCH_NAME in ['main', 'test']) {
-          mail to: "${env.EMAIL_RECIPIENT}",
-              subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
-              body: """Console output: ${env.BUILD_URL}"""
-        }
-      }
+      mail to: "${env.EMAIL_RECIPIENT}",
+          subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+          body: """Console output: ${env.BUILD_URL}"""
     }
   }
 }
