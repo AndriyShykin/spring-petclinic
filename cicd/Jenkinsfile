@@ -1,16 +1,25 @@
 pipeline {
   agent none
+  options {
+    disableConcurrentBuilds()
+    preserveStashes()
+  }
+  when {
+    allOf {
+      expression { env.BRANCH_NAME in ['main', 'test'] }
+      anyOf {
+        changeset "src/main/**"
+        triggeredBy 'UserIdCause'
+      }
+    }
+  }
   environment {
     AGENT_IMAGE = 'shykin/alpine:c9bf89728ff6e4b14b1aad1986ca27650facb2d3'
     APP_NAME = 'spring-petclinic'
     AWS_ACCOUNT_ID = "${AWS_ACCOUNT_ID_}"
     AWS_REGION = 'eu-north-1'
     IMAGE_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    JENKINS_AWS_ROLE = 'arn:aws:iam::975049956464:role/JenkinsAssumeRole'
-  }
-  options {
-    disableConcurrentBuilds()
-    preserveStashes()
+    JENKINS_AWS_ROLE = "arn:aws:iam::${AWS_ACCOUNT_ID}:role/JenkinsAssumeRole"
   }
   parameters {
     string(name: 'AWS_CRED_ID', defaultValue: 'jenkins-aws')
@@ -18,7 +27,7 @@ pipeline {
     booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'DEPLOY', defaultValue: false)
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: env.AWS_REGION)
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value if left empty.')
   }
@@ -29,14 +38,7 @@ pipeline {
         timeout(time: 600, unit: 'SECONDS')
       }
       when {
-        allOf {
-          expression { env.BRANCH_NAME in ['main', 'test'] }
-          expression { return params.BUILD_APP }
-          anyOf {
-            changeset "src/main/**"
-            triggeredBy 'UserIdCause'
-          }
-        }
+        expression { return params.BUILD_APP }
       }
       stages {
         stage('Build App'){
@@ -64,14 +66,7 @@ pipeline {
         timeout(time: 600, unit: 'SECONDS')
       }
       when {
-        allOf {
-          expression { env.BRANCH_NAME in ['main', 'test'] }
-          expression { return params.BUILD_IMAGE }
-          anyOf {
-            changeset "src/main/**"
-            triggeredBy 'UserIdCause'
-          }
-        }
+        expression { return params.BUILD_IMAGE }
       }
       stages {
         stage('Build Image'){
@@ -115,14 +110,7 @@ pipeline {
         timeout(time: 600, unit: 'SECONDS')
       }
       when {
-        allOf {
-          expression { env.BRANCH_NAME in ['main', 'test'] }
-          expression { return params.DEPLOY }
-          anyOf {
-            changeset "src/main/**"
-            triggeredBy 'UserIdCause'
-          }
-        }
+        expression { return params.DEPLOY }
       }
       stages {
         stage('Deploy'){
