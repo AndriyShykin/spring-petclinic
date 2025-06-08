@@ -149,14 +149,10 @@ pipeline {
     }
   }
   post {
-    always {
-      script {
-        if (currentBuild.currentResult != 'SUCCESS' || currentBuild.previousBuild?.result != currentBuild.currentResult) {
-          mail to: "${env.EMAIL_RECIPIENT}",
-              subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
-              body: """Console output: ${env.BUILD_URL}"""
-        }
-      }
+    unsuccessful {
+      mail to: "${env.EMAIL_RECIPIENT}",
+          subject: "${currentBuild.currentResult}: ${currentBuild.fullDisplayName}",
+          body: """Console output: ${env.BUILD_URL}"""
     }
   }
 }
