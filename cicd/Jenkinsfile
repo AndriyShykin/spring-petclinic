@@ -122,7 +122,7 @@ pipeline {
               helm upgrade --create-namespace \
                 --namespace "${APP_NAME}-${BRANCH_NAME}" \
                 --install "${APP_NAME}-${BRANCH_NAME}" \
-                --set applicationName="${APP_NAME}"
+                --set applicationName="${APP_NAME}" \
                 --set branchName="${BRANCH_NAME}" \
                 --set awsAccountId="${AWS_ACCOUNT_ID}" \
                 --set awsRegion="${AWS_REGION}" \
