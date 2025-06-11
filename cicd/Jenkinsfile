@@ -136,8 +136,9 @@ pipeline {
               healthCheckPassed=0
               while [ "${healthCheckPassed}" -ne 1 ]; do
                 rollout_status=$(kubectl rollout status deploy "${APP_NAME}-${BRANCH_NAME}-app" -n "${APP_NAME}-${BRANCH_NAME}" --timeout="${timeoutSec}s") || true
-                hostname=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.status.loadBalancer.ingress[0].hostname')
-                port=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}" -n "${APP_NAME}-${BRANCH_NAME}" -o json | jq -r '.spec.ports[0].port')
+                svc=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}-app" -n "${APP_NAME}-${BRANCH_NAME}" -o json)
+                hostname=$(echo "$svc" | jq -r '.status.loadBalancer.ingress[0].hostname')
+                port=$(echo "$svc" | jq -r '.spec.ports[0].port')
                 response=$(curl "http://${hostname}:${port}/actuator/health") || true
                 actuator_status=$(echo "${response}" | jq -r '.status')
                 if [ $(echo ${rollout_status}|grep "successfully rolled out"|wc -l) -ne 0 ] && [ "${actuator_status}" = "UP" ]; then
