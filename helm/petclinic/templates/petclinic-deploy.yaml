@@ -1,23 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+  name: {{ .Values.applicationName }}-{{ .Values.branchName }}-app
 spec:
   replicas: {{ .Values.application.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.applicationName }}-{{ .Values.branchName }}
+      app: {{ .Values.applicationName }}-{{ .Values.branchName }}-app
   template:
     metadata:
       labels:
-        app: {{ .Values.applicationName }}-{{ .Values.branchName }}
+        app: {{ .Values.applicationName }}-{{ .Values.branchName }}-app
     spec:
       automountServiceAccountToken: false
       containers:
         - envFrom:
             - configMapRef:
-                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
-            - secretRef:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
           image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" (toString .Values.awsAccountId) .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
           name: {{ .Values.applicationName }}-{{ .Values.branchName }}
@@ -31,12 +29,12 @@ spec:
             - |
               i=0
               max_iterations=15
-              while ! nc -z {{ .Values.applicationName }}-{{ .Values.branchName }}-db {{ .Values.database.containerPort }}; do
+              while ! nc -z {{ .Values.database.host }} {{ .Values.database.port }}; do
                 if [ $i -ge $max_iterations ]; then
                   echo "Timeout waiting for database. Exiting now..."
                   exit 1
                 fi
-                echo "Waiting for database at {{ .Values.applicationName }}-{{ .Values.branchName }}-db:{{ .Values.database.containerPort }}..."
+                echo "Waiting for database at {{ .Values.database.host }}:{{ .Values.database.port }}..."
                 i=$((i+1))
                 sleep 4
               done

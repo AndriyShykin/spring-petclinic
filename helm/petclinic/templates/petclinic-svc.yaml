@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+  name: {{ .Values.applicationName }}-{{ .Values.branchName }}-app
 spec:
   selector:
-    app: {{ .Values.applicationName }}-{{ .Values.branchName }}
+    app: {{ .Values.applicationName }}-{{ .Values.branchName }}-app
   ports:
     - port: {{ .Values.application.exposePort }}
       targetPort: {{ .Values.application.containerPort }}

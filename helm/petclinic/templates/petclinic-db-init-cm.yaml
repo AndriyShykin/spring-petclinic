@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-init-sql
+  name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db-init
 data:
   10-init.sql: |
-    CREATE DATABASE IF NOT EXISTS {{ .Values.config.databaseName }};
-    ALTER DATABASE {{ .Values.config.databaseName }}
+    CREATE DATABASE IF NOT EXISTS {{ .Values.database.name }};
+    ALTER DATABASE {{ .Values.database.name }}
     DEFAULT CHARACTER SET utf8
     DEFAULT COLLATE utf8_general_ci;
-    CREATE USER IF NOT EXISTS '{{ .Values.secret.mysqlUser }}'@'%' IDENTIFIED BY '{{ .Values.secret.mysqlPassword }}';
-    GRANT ALL PRIVILEGES ON {{ .Values.config.databaseName }}.* TO '{{ .Values.secret.mysqlUser }}'@'%';
+    CREATE USER IF NOT EXISTS '{{ .Values.database.user }}'@'%' IDENTIFIED BY '{{ .Values.database.password }}';
+    GRANT ALL PRIVILEGES ON {{ .Values.database.name }}.* TO '{{ .Values.database.user }}'@'%';
     FLUSH PRIVILEGES;
     
-    USE {{ .Values.config.databaseName }}
+    USE {{ .Values.database.name }}
     
     CREATE TABLE IF NOT EXISTS vets (
     id INT(4) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,

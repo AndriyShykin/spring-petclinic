@@ -20,6 +20,7 @@ pipeline {
     booleanParam(name: 'DEPLOY', defaultValue: false)
     string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
     string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
+    string(name: 'DB_HOST', defaultValue: '')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value if left empty.')
   }
   stages {
@@ -119,13 +120,17 @@ pipeline {
               aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
               [ -z "${IMAGE_TAG}" ] && IMAGE_TAG="${GIT_COMMIT}"
               helm upgrade --create-namespace \
-                --install "${APP_NAME}-${BRANCH_NAME}" \
                 --namespace "${APP_NAME}-${BRANCH_NAME}" \
+                --install "${APP_NAME}-${BRANCH_NAME}" \
+                --set applicationName="${APP_NAME}"
                 --set branchName="${BRANCH_NAME}" \
                 --set awsAccountId="${AWS_ACCOUNT_ID}" \
                 --set awsRegion="${AWS_REGION}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
-                --set application.imageTag="${IMAGE_TAG}" helm/petclinic
+                --set application.imageTag="${IMAGE_TAG}" \
+                --set database.host="${DB_HOST}" \
+                --set database.name="petclinic_${BRANCH_NAME}" \
+                helm/petclinic
               delaySec=4
               timeoutSec=2
               healthCheckPassed=0
