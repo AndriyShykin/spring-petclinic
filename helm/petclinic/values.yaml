@@ -1,22 +1,23 @@
-applicationName: ""
-branchName: ""
-awsAccountId: ""
-awsRegion: ""
+applicationName: none
+branchName: none
+awsAccountId: none
+awsRegion: none
 
 application:
   replicas: 1
-  image: ""
-  imageTag: ""
+  image: none
+  imageTag: none
   containerPort: 8080
   exposePort: 8080
 
 config:
-  springJpaHibernateDdlAuto: "update"
-  springProfilesActive: "MySQL"
+  springJpaHibernateDdlAuto: update
+  springProfilesActive: MySQL
 
 database:
-  host: ""
-  port: 3306
-  name: ""
-  user: "petclinic"
-  password: "petclinic"
+  host: none
+  port: none
+  name: none
+  username: none
+  password: none
+

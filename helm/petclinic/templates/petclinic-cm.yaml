@@ -4,7 +4,5 @@ metadata:
   name: {{ .Values.applicationName }}-{{ .Values.branchName }}
 data:
   SPRING_DATASOURCE_URL: {{ (print "jdbc:mysql://" .Values.database.host ":" .Values.database.port "/" .Values.database.name "?useUnicode=true") | quote }}
-  SPRING_JPA_HIBERNATE_DDL_AUTO: {{ .Values.config.springJpaDdlHibernateAuto }}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: {{ .Values.config.springJpaHibernateDdlAuto }}
   SPRING_PROFILES_ACTIVE: {{ .Values.config.springProfilesActive }}
-  SPRING_DATASOURCE_USERNAME: {{ .Values.database.user }}
-  SPRING_DATASOURCE_PASSWORD: {{ .Values.database.password }}

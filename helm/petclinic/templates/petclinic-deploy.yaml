@@ -17,6 +17,8 @@ spec:
         - envFrom:
             - configMapRef:
                 name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+            - secretRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
           image: {{ printf "%s.dkr.ecr.%s.amazonaws.com/%s:%s" (toString .Values.awsAccountId) .Values.awsRegion .Values.application.image .Values.application.imageTag | quote }}
           name: {{ .Values.applicationName }}-{{ .Values.branchName }}
           ports:

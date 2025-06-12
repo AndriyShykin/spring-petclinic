@@ -10,7 +10,12 @@ spec:
         - command:
             - /bin/sh
             - -c
-            - "mysql -h {{ .Values.database.host }} -P {{ .Values.database.port }} -u {{ .Values.database.user }} -p{{ .Values.database.password }} < /etc/mysql/init/10-init.sql"
+            - "mysql -h {{ .Values.database.host }} -P {{ .Values.database.port }} -u ${SPRING_DATASOURCE_USERNAME} -p${SPRING_DATASOURCE_PASSWORD} < /etc/mysql/init/10-init.sql"
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}
+            - secretRef:
+                name: {{ .Values.applicationName }}-{{ .Values.branchName }}-db
           image: mysql:9.3
           name: db-init
           volumeMounts:
