@@ -118,7 +118,6 @@ pipeline {
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
               db=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='$RDS_INSTANCE_ID'] | [0]" --output json)
-              secretArn=$(echo "$db" | jq -r '.MasterUserSecret.SecretArn')
               aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
               [ -z "${IMAGE_TAG}" ] && IMAGE_TAG="${GIT_COMMIT}"
               helm upgrade --create-namespace \
@@ -133,8 +132,6 @@ pipeline {
                 --set database.host=$(echo "$db" | jq -r '.Endpoint.Address') \
                 --set database.port=$(echo "$db" | jq -r '.Endpoint.Port') \
                 --set database.name="petclinic_${BRANCH_NAME}" \
-                --set database.username=$(echo "$db" | jq -r '.MasterUsername') \
-                --set database.password=$(aws secretsmanager get-secret-value --secret-id "$secretArn" --query 'SecretString' --output text | jq -r .password) \
                 helm/petclinic
               delaySec=4
               timeoutSec=2

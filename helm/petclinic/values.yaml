@@ -18,6 +18,3 @@ database:
   host: none
   port: none
   name: none
-  username: none
-  password: none
-
