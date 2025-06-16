@@ -118,6 +118,8 @@ pipeline {
               --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
               --output text))
               db=$(aws rds describe-db-instances --region "${EKS_CLUSTER_REGION}" --query "DBInstances[?DBInstanceIdentifier=='$RDS_INSTANCE_ID'] | [0]" --output json)
+              db_host=$(echo "${db}" | jq -r '.Endpoint.Address')
+              db_port=$(echo "${db}" | jq -r '.Endpoint.Port')
               aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}" --region "${EKS_CLUSTER_REGION}"
               [ -z "${IMAGE_TAG}" ] && IMAGE_TAG="${GIT_COMMIT}"
               helm upgrade --create-namespace \
@@ -128,8 +130,8 @@ pipeline {
                 --set application.imageRegistry="${IMAGE_REGISTRY}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
                 --set application.imageTag="${IMAGE_TAG}" \
-                --set database.host=$(echo "$db" | jq -r '.Endpoint.Address') \
-                --set database.port=$(echo "$db" | jq -r '.Endpoint.Port') \
+                --set database.host="${db_host}" \
+                --set database.port="${db_port}" \
                 --set database.name="petclinic_${BRANCH_NAME}" \
                 helm/petclinic
               delaySec=4
@@ -138,8 +140,8 @@ pipeline {
               while [ "${healthCheckPassed}" -ne 1 ]; do
                 rollout_status=$(kubectl rollout status deploy "${APP_NAME}-${BRANCH_NAME}-app" -n "${APP_NAME}-${BRANCH_NAME}" --timeout="${timeoutSec}s") || true
                 svc=$(kubectl get svc "${APP_NAME}-${BRANCH_NAME}-app" -n "${APP_NAME}-${BRANCH_NAME}" -o json)
-                hostname=$(echo "$svc" | jq -r '.status.loadBalancer.ingress[0].hostname')
-                port=$(echo "$svc" | jq -r '.spec.ports[0].port')
+                hostname=$(echo "${svc}" | jq -r '.status.loadBalancer.ingress[0].hostname')
+                port=$(echo "${svc}" | jq -r '.spec.ports[0].port')
                 response=$(curl "http://${hostname}:${port}/actuator/health") || true
                 actuator_status=$(echo "${response}" | jq -r '.status')
                 if [ $(echo ${rollout_status}|grep "successfully rolled out"|wc -l) -ne 0 ] && [ "${actuator_status}" = "UP" ]; then
