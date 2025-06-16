@@ -1,12 +1,11 @@
 applicationName: none
 branchName: none
-awsAccountId: none
-awsRegion: none
 
 application:
-  replicas: 1
+  imageRegistry: none
   image: none
   imageTag: none
+  replicas: 1
   containerPort: 8080
   exposePort: 8080
 

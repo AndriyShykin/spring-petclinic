@@ -18,9 +18,9 @@ pipeline {
     booleanParam(name: 'BUILD_IMAGE', defaultValue: true)
     string(name: 'DOCKER_HOST_', defaultValue: 'tcp://172.31.18.232:2375')
     booleanParam(name: 'DEPLOY', defaultValue: false)
-    string(name: 'EKS_CLUSTER_REGION', defaultValue: 'eu-north-1')
-    string(name: 'EKS_CLUSTER_NAME', defaultValue: 'eks-cluster')
-    string(name: 'RDS_INSTANCE_ID', defaultValue: 'eks-cluster-db')
+    string(name: 'EKS_CLUSTER_REGION', defaultValue: '')
+    string(name: 'EKS_CLUSTER_NAME', defaultValue: '')
+    string(name: 'RDS_INSTANCE_ID', defaultValue: '')
     string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag to deploy. Will be set to GIT_COMMIT value if left empty.')
   }
   stages {
@@ -125,8 +125,7 @@ pipeline {
                 --install "${APP_NAME}-${BRANCH_NAME}" \
                 --set applicationName="${APP_NAME}" \
                 --set branchName="${BRANCH_NAME}" \
-                --set awsAccountId="${AWS_ACCOUNT_ID}" \
-                --set awsRegion="${AWS_REGION}" \
+                --set application.imageRegistry="${IMAGE_REGISTRY}" \
                 --set application.image="${APP_NAME}-${BRANCH_NAME}" \
                 --set application.imageTag="${IMAGE_TAG}" \
                 --set database.host=$(echo "$db" | jq -r '.Endpoint.Address') \
